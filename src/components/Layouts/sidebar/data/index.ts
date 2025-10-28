@@ -46,12 +46,7 @@ export const NAV_DATA = [
         icon: Icons.Table,
         items: [],
       },
-      {
-        title: "Google Sheets Sync",
-        url: "/admin/sync",
-        icon: Icons.Authentication,
-        items: [],
-      },
+
 
     ],
   },
@@ -80,6 +75,12 @@ export const NAV_DATA = [
         title: "Settings",
         url: "/admin/settings",
         icon: Icons.Authentication,
+        items: [],
+      },
+      {
+        title: "Google Sheets",
+        url: "/admin/sync",
+        icon: Icons.Table,
         items: [],
       },
     ],

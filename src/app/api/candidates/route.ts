@@ -4,59 +4,20 @@ import { Candidate } from '@/types';
 import { ObjectId } from 'mongodb';
 import { sheetsSync } from '@/lib/sheetsSync';
 
+
 export async function GET() {
   try {
     const db = await getDatabase();
     const collection = db.collection<Candidate>('candidates');
     
     // Filter out blank/empty candidates using MongoDB query
-    let candidates = await collection.find({
+    const candidates = await collection.find({
       name: { $exists: true, $ne: '', $ne: null },
       chestNumber: { $exists: true, $ne: '', $ne: null },
       team: { $exists: true, $ne: '', $ne: null },
-      section: { $exists: true, $ne: '', $ne: null }
+      section: { $exists: true, $ne: '', $ne: null },
+      grade: { $exists: true, $ne: '', $ne: null }
     }).toArray();
-    
-    // If no valid candidates exist, create default candidates
-    if (candidates.length === 0) {
-      const defaultCandidates: Candidate[] = [
-        {
-          chestNumber: '001',
-          name: 'Ahmed Ali',
-          team: 'SUMUD',
-          section: 'senior',
-          points: 45,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          chestNumber: '002',
-          name: 'Fatima Hassan',
-          team: 'AQSA',
-          section: 'junior',
-          points: 42,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          chestNumber: '003',
-          name: 'Omar Khalil',
-          team: 'INTIFADA',
-          section: 'sub-junior',
-          points: 40,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-      
-      await collection.insertMany(defaultCandidates);
-      candidates = await collection.find({
-        name: { $exists: true, $ne: '', $ne: null },
-        chestNumber: { $exists: true, $ne: '', $ne: null },
-        team: { $exists: true, $ne: '', $ne: null },
-        section: { $exists: true, $ne: '', $ne: null }
-      }).toArray();
-    }
     
     return NextResponse.json(candidates);
   } catch (error) {
@@ -80,7 +41,13 @@ export async function POST(request: Request) {
     
     const result = await collection.insertOne(newCandidate);
     
-    // Note: Automatic Google Sheets sync temporarily disabled to avoid quota issues
+    // Auto-sync to Google Sheets
+    try {
+      await sheetsSync.syncToSheets('candidates');
+    } catch (syncError) {
+      console.error('Error syncing to sheets:', syncError);
+      // Don't fail the main operation if sync fails
+    }
     
     return NextResponse.json({ success: true, id: result.insertedId });
   } catch (error) {
@@ -100,8 +67,27 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
     
-    // Use sheetsSync to update record in both MongoDB and Google Sheets
-    const result = await sheetsSync.updateRecord('candidates', id, body);
+    // Update record in MongoDB
+    const db = await getDatabase();
+    const collection = db.collection<Candidate>('candidates');
+    
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          ...body, 
+          updatedAt: new Date() 
+        } 
+      }
+    );
+
+    // Auto-sync to Google Sheets
+    try {
+      await sheetsSync.syncToSheets('candidates');
+    } catch (syncError) {
+      console.error('Error syncing to sheets:', syncError);
+      // Don't fail the main operation if sync fails
+    }
     
     return NextResponse.json({ success: true, message: 'Candidate updated successfully' });
   } catch (error) {
@@ -119,8 +105,19 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Candidate ID is required' }, { status: 400 });
     }
 
-    // Use sheetsSync to delete record from both MongoDB and Google Sheets
-    const result = await sheetsSync.deleteRecord('candidates', id);
+    // Delete record from MongoDB
+    const db = await getDatabase();
+    const collection = db.collection<Candidate>('candidates');
+    
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+
+    // Auto-sync to Google Sheets
+    try {
+      await sheetsSync.syncToSheets('candidates');
+    } catch (syncError) {
+      console.error('Error syncing to sheets:', syncError);
+      // Don't fail the main operation if sync fails
+    }
     
     return NextResponse.json({ success: true, message: 'Candidate deleted successfully' });
   } catch (error) {

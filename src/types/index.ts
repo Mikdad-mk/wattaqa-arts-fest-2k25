@@ -6,7 +6,9 @@ export interface Team {
   name: string;
   color: string;
   description: string;
+  motto?: string;
   captain: string;
+  leaders?: string[];
   members: number;
   points: number;
   createdAt?: Date;
@@ -31,6 +33,7 @@ export interface Candidate {
   name: string;
   team: string;
   section: 'senior' | 'junior' | 'sub-junior' | 'general';
+  grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
   points: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -40,13 +43,13 @@ export interface Result {
   _id?: ObjectId | string;
   programme: string;
   section: 'senior' | 'junior' | 'sub-junior' | 'general';
-  grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
   positionType: 'individual' | 'group' | 'general';
-  winners: {
-    position: 'first' | 'second' | 'third';
-    participants: string[]; // chest numbers or team names
-    points: number;
-  }[];
+  firstPlace: { chestNumber: string; grade?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' }[];
+  secondPlace: { chestNumber: string; grade?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' }[];
+  thirdPlace: { chestNumber: string; grade?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' }[];
+  firstPoints: number;
+  secondPoints: number;
+  thirdPoints: number;
   notes?: string;
   createdAt?: Date;
   updatedAt?: Date;

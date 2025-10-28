@@ -1,50 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
-
-interface SyncConfig {
-  spreadsheetId: string;
-  sheetsConfigured: boolean;
-  availableTypes: string[];
-  syncActions: string[];
-}
+import { useState } from "react";
 
 export default function SyncPage() {
-  const [config, setConfig] = useState<SyncConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState<string | null>(null);
-  const [lastSync, setLastSync] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncResults, setSyncResults] = useState<any>(null);
 
-  // Fetch sync configuration
-  const fetchConfig = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/sync');
-      const data = await response.json();
-      
-      if (data.success) {
-        setConfig(data.config);
-      }
-    } catch (error) {
-      console.error('Error fetching sync config:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  // Handle sync operations
-  const handleSync = async (action: 'sync-to-sheets' | 'sync-from-sheets', type: string) => {
-    const syncKey = `${action}-${type}`;
+  const handleSync = async (action: 'sync-to-sheets' | 'sync-from-sheets', type: string = 'all') => {
+    setIsLoading(true);
+    setSyncResults(null);
     
     try {
-      setSyncing(syncKey);
-      
       const response = await fetch('/api/sync', {
         method: 'POST',
         headers: {
@@ -54,240 +23,202 @@ export default function SyncPage() {
       });
 
       const data = await response.json();
+      setSyncResults(data);
       
       if (data.success) {
-        alert(data.message);
-        setLastSync(prev => ({
-          ...prev,
-          [syncKey]: new Date().toLocaleString()
-        }));
-      } else {
-        alert(`Sync failed: ${data.error}`);
+        setLastSync(new Date().toLocaleString());
       }
     } catch (error) {
-      console.error('Sync error:', error);
-      alert('Sync failed: Network error');
+      setSyncResults({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
-      setSyncing(null);
+      setIsLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <>
-        <Breadcrumb pageName="Google Sheets Sync" />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading sync configuration...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
       <Breadcrumb pageName="Google Sheets Sync" />
 
       <div className="space-y-6">
-        {/* Configuration Status */}
-        <ShowcaseSection title="Sync Configuration">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Google Sheets Status
-                </label>
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  config?.sheetsConfigured 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {config?.sheetsConfigured ? '✓ Configured' : '✗ Not Configured'}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Spreadsheet ID
-                </label>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <code className="text-sm text-gray-700">
-                    {config?.spreadsheetId || 'Not configured'}
-                  </code>
-                </div>
-              </div>
+        {/* Sync Status */}
+        <ShowcaseSection title="Sync Status">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-4 text-center">
+              <div className="text-3xl mb-2">📊</div>
+              <h3 className="font-bold text-blue-700">Spreadsheet ID</h3>
+              <p className="text-sm text-blue-600 font-mono break-all">
+                {process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '19Ug-K85q4u3yNmF0MDgC8D4lOkSRs_-MVR-CbzV2rzA'}
+              </p>
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Available Data Types
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {config?.availableTypes.map((type) => (
-                    <span 
-                      key={type}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                    >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sync Actions
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {config?.syncActions.map((action) => (
-                    <span 
-                      key={action}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800"
-                    >
-                      {action.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 text-center">
+              <div className="text-3xl mb-2">🔄</div>
+              <h3 className="font-bold text-green-700">Last Sync</h3>
+              <p className="text-sm text-green-600 font-medium">
+                {lastSync || 'Never'}
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 text-center">
+              <div className="text-3xl mb-2">✅</div>
+              <h3 className="font-bold text-purple-700">Status</h3>
+              <p className="text-sm text-purple-600 font-medium">
+                {isLoading ? 'Syncing...' : 'Ready'}
+              </p>
             </div>
           </div>
-
-          {!config?.sheetsConfigured && (
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h4 className="text-sm font-medium text-yellow-800 mb-2">Setup Required</h4>
-              <p className="text-sm text-yellow-700 mb-3">
-                To enable Google Sheets integration, you need to configure the following environment variables:
-              </p>
-              <ul className="text-sm text-yellow-700 space-y-1">
-                <li>• <code>GOOGLE_SPREADSHEET_ID</code> - Your Google Spreadsheet ID</li>
-                <li>• <code>GOOGLE_CLIENT_EMAIL</code> - Service account email</li>
-                <li>• <code>GOOGLE_PRIVATE_KEY</code> - Service account private key</li>
-                <li>• <code>GOOGLE_PROJECT_ID</code> - Google Cloud project ID</li>
-              </ul>
-            </div>
-          )}
         </ShowcaseSection>
 
-        {/* Sync Operations */}
-        {config?.sheetsConfigured && (
-          <>
-            {/* Sync to Google Sheets */}
-            <ShowcaseSection title="Sync to Google Sheets">
-              <p className="text-gray-600 mb-4">
-                Push data from MongoDB to Google Sheets. This will overwrite existing data in the sheets.
+        {/* Sync Controls */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Sync TO Sheets */}
+          <ShowcaseSection title="Sync TO Google Sheets">
+            <div className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                Push data from your admin panel to Google Sheets. This will overwrite the sheet data.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {config.availableTypes.map((type) => (
-                  <div key={type} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-2">
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </h4>
-                    <button
-                      onClick={() => handleSync('sync-to-sheets', type)}
-                      disabled={syncing === `sync-to-sheets-${type}`}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200"
-                    >
-                      {syncing === `sync-to-sheets-${type}` ? 'Syncing...' : 'Sync to Sheets'}
-                    </button>
-                    {lastSync[`sync-to-sheets-${type}`] && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        Last sync: {lastSync[`sync-to-sheets-${type}`]}
-                      </p>
-                    )}
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleSync('sync-to-sheets', 'teams')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium"
+                >
+                  Sync Teams
+                </button>
                 
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">All Data</h4>
-                  <button
-                    onClick={() => handleSync('sync-to-sheets', 'all')}
-                    disabled={syncing === 'sync-to-sheets-all'}
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200"
-                  >
-                    {syncing === 'sync-to-sheets-all' ? 'Syncing...' : 'Sync All to Sheets'}
-                  </button>
-                  {lastSync['sync-to-sheets-all'] && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Last sync: {lastSync['sync-to-sheets-all']}
-                    </p>
-                  )}
-                </div>
+                <button
+                  onClick={() => handleSync('sync-to-sheets', 'candidates')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium"
+                >
+                  Sync Candidates
+                </button>
+                
+                <button
+                  onClick={() => handleSync('sync-to-sheets', 'programmes')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium"
+                >
+                  Sync Programmes
+                </button>
+                
+                <button
+                  onClick={() => handleSync('sync-to-sheets', 'results')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium"
+                >
+                  Sync Results
+                </button>
+                
+                <button
+                  onClick={() => handleSync('sync-to-sheets', 'all')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium col-span-2"
+                >
+                  Sync All
+                </button>
               </div>
-            </ShowcaseSection>
+            </div>
+          </ShowcaseSection>
 
-            {/* Sync from Google Sheets */}
-            <ShowcaseSection title="Sync from Google Sheets">
-              <p className="text-gray-600 mb-4">
-                Pull data from Google Sheets to MongoDB. This will update existing records and add new ones.
+          {/* Sync FROM Sheets */}
+          <ShowcaseSection title="Sync FROM Google Sheets">
+            <div className="space-y-4">
+              <p className="text-gray-600 text-sm">
+                Pull data from Google Sheets to your admin panel. This will update your database.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {config.availableTypes.map((type) => (
-                  <div key={type} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-2">
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </h4>
-                    <button
-                      onClick={() => handleSync('sync-from-sheets', type)}
-                      disabled={syncing === `sync-from-sheets-${type}`}
-                      className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200"
-                    >
-                      {syncing === `sync-from-sheets-${type}` ? 'Syncing...' : 'Sync from Sheets'}
-                    </button>
-                    {lastSync[`sync-from-sheets-${type}`] && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        Last sync: {lastSync[`sync-from-sheets-${type}`]}
-                      </p>
-                    )}
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleSync('sync-from-sheets', 'teams')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium border-2 border-green-200"
+                >
+                  Import Teams
+                </button>
                 
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">All Data</h4>
-                  <button
-                    onClick={() => handleSync('sync-from-sheets', 'all')}
-                    disabled={syncing === 'sync-from-sheets-all'}
-                    className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200"
-                  >
-                    {syncing === 'sync-from-sheets-all' ? 'Syncing...' : 'Sync All from Sheets'}
-                  </button>
-                  {lastSync['sync-from-sheets-all'] && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Last sync: {lastSync['sync-from-sheets-all']}
-                    </p>
-                  )}
-                </div>
+                <button
+                  onClick={() => handleSync('sync-from-sheets', 'candidates')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 text-blue-700 px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium border-2 border-blue-200"
+                >
+                  Import Candidates
+                </button>
+                
+                <button
+                  onClick={() => handleSync('sync-from-sheets', 'programmes')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-orange-100 to-amber-100 hover:from-orange-200 hover:to-amber-200 text-orange-700 px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium border-2 border-orange-200"
+                >
+                  Import Programmes
+                </button>
+                
+                <button
+                  onClick={() => handleSync('sync-from-sheets', 'results')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-red-100 to-rose-100 hover:from-red-200 hover:to-rose-200 text-red-700 px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium border-2 border-red-200"
+                >
+                  Import Results
+                </button>
+                
+                <button
+                  onClick={() => handleSync('sync-from-sheets', 'all')}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700 px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 text-sm font-medium border-2 border-purple-200 col-span-2"
+                >
+                  Import All
+                </button>
               </div>
-            </ShowcaseSection>
+            </div>
+          </ShowcaseSection>
+        </div>
 
-            {/* Instructions */}
-            <ShowcaseSection title="How It Works">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Automatic Sync</h4>
-                  <ul className="text-sm text-gray-600 space-y-2">
-                    <li>• When you add/edit/delete data in the admin panel, it automatically syncs to Google Sheets</li>
-                    <li>• Each data type gets its own sheet (Teams, Candidates, Programmes)</li>
-                    <li>• MongoDB ObjectIDs are preserved for data integrity</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Manual Sync</h4>
-                  <ul className="text-sm text-gray-600 space-y-2">
-                    <li>• Use "Sync to Sheets" to push current MongoDB data to Google Sheets</li>
-                    <li>• Use "Sync from Sheets" to pull changes made directly in Google Sheets</li>
-                    <li>• You can edit data directly in Google Sheets and sync back to MongoDB</li>
-                  </ul>
-                </div>
+        {/* Sync Results */}
+        {syncResults && (
+          <ShowcaseSection title="Sync Results">
+            <div className={`p-4 rounded-lg ${syncResults.success ? 'bg-green-50 border-2 border-green-200' : 'bg-red-50 border-2 border-red-200'}`}>
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-2xl">{syncResults.success ? '✅' : '❌'}</span>
+                <h3 className={`font-bold ${syncResults.success ? 'text-green-700' : 'text-red-700'}`}>
+                  {syncResults.success ? 'Success' : 'Error'}
+                </h3>
               </div>
-            </ShowcaseSection>
-          </>
+              
+              <p className={`text-sm font-medium ${syncResults.success ? 'text-green-600' : 'text-red-600'}`}>
+                {syncResults.message || syncResults.error}
+              </p>
+              
+              {syncResults.results && (
+                <div className="mt-3 space-y-1">
+                  {syncResults.results.map((result: any, index: number) => (
+                    <div key={index} className="text-xs text-gray-600">
+                      {result.error ? `❌ ${result.error}` : `✅ ${result.count || result.inserted + result.updated} records processed`}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ShowcaseSection>
         )}
+
+        {/* Instructions */}
+        <ShowcaseSection title="How to Share Your Spreadsheet">
+          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
+            <h3 className="font-bold text-yellow-800 mb-3">📋 Setup Instructions</h3>
+            <ol className="list-decimal list-inside space-y-2 text-yellow-700">
+              <li>Open your Google Spreadsheet: <a href="https://docs.google.com/spreadsheets/d/19Ug-K85q4u3yNmF0MDgC8D4lOkSRs_-MVR-CbzV2rzA/edit" target="_blank" className="text-blue-600 underline">Click here</a></li>
+              <li>Click the "Share" button (top right corner)</li>
+              <li>Add your service account email (from your .env.local file)</li>
+              <li>Set permission to "Editor"</li>
+              <li>Click "Send"</li>
+              <li>Come back here and test the sync!</li>
+            </ol>
+          </div>
+        </ShowcaseSection>
       </div>
     </>
   );

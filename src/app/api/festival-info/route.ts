@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { FestivalInfo } from '@/types';
 import { ObjectId } from 'mongodb';
-import { sheetsSync } from '@/lib/sheetsSync';
+
 
 export async function GET() {
   try {
@@ -40,7 +40,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     
-    // Use sheetsSync to update record in both MongoDB and Google Sheets
+    // Update record in MongoDB
     const db = await getDatabase();
     const collection = db.collection<FestivalInfo>('festival-info');
     
@@ -55,14 +55,6 @@ export async function PUT(request: Request) {
       { upsert: true }
     );
     
-    // Sync to Google Sheets
-    try {
-      await sheetsSync.syncToSheets('basic');
-    } catch (syncError) {
-      console.error('Error syncing to sheets:', syncError);
-      // Don't fail the main operation if sync fails
-    }
-    
     return NextResponse.json({ success: true, result });
   } catch (error) {
     console.error('Error updating festival info:', error);
@@ -74,10 +66,17 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Use sheetsSync to add record to both MongoDB and Google Sheets
-    const result = await sheetsSync.addRecord('basic', body);
+    // Add record to MongoDB
+    const db = await getDatabase();
+    const collection = db.collection<FestivalInfo>('festival-info');
     
-    return NextResponse.json({ success: true, id: result.id });
+    const result = await collection.insertOne({
+      ...body,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    return NextResponse.json({ success: true, id: result.insertedId.toString() });
   } catch (error) {
     console.error('Error creating festival info:', error);
     return NextResponse.json({ error: 'Failed to create festival info' }, { status: 500 });

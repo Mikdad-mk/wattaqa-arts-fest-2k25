@@ -4,73 +4,13 @@ import { Result } from '@/types';
 import { ObjectId } from 'mongodb';
 import { sheetsSync } from '@/lib/sheetsSync';
 
+
 export async function GET() {
   try {
     const db = await getDatabase();
     const collection = db.collection<Result>('results');
     
-    let results = await collection.find({}).toArray();
-    
-    // If no results exist, create default results
-    if (results.length === 0) {
-      const defaultResults: Result[] = [
-        {
-          programme: 'Classical Dance',
-          section: 'senior',
-          grade: 'A',
-          positionType: 'individual',
-          winners: [
-            {
-              position: 'first',
-              participants: ['001'],
-              points: 10
-            },
-            {
-              position: 'second', 
-              participants: ['002'],
-              points: 8
-            },
-            {
-              position: 'third',
-              participants: ['003'],
-              points: 6
-            }
-          ],
-          notes: 'Excellent performance by all participants',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          programme: 'Football',
-          section: 'junior',
-          grade: 'A',
-          positionType: 'group',
-          winners: [
-            {
-              position: 'first',
-              participants: ['Team Sumud'],
-              points: 15
-            },
-            {
-              position: 'second',
-              participants: ['Team Aqsa'],
-              points: 12
-            },
-            {
-              position: 'third',
-              participants: ['Team Inthifada'],
-              points: 10
-            }
-          ],
-          notes: 'Great teamwork and sportsmanship',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-      
-      await collection.insertMany(defaultResults);
-      results = await collection.find({}).toArray();
-    }
+    const results = await collection.find({}).toArray();
     
     return NextResponse.json(results);
   } catch (error) {
@@ -83,10 +23,25 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Use sheetsSync to add record to both MongoDB and Google Sheets
-    const result = await sheetsSync.addRecord('results', body);
+    // Add record to MongoDB
+    const db = await getDatabase();
+    const collection = db.collection<Result>('results');
     
-    return NextResponse.json({ success: true, id: result.id });
+    const result = await collection.insertOne({
+      ...body,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Auto-sync to Google Sheets
+    try {
+      await sheetsSync.syncToSheets('results');
+    } catch (syncError) {
+      console.error('Error syncing to sheets:', syncError);
+      // Don't fail the main operation if sync fails
+    }
+    
+    return NextResponse.json({ success: true, id: result.insertedId.toString() });
   } catch (error) {
     console.error('Error creating result:', error);
     return NextResponse.json({ error: 'Failed to create result' }, { status: 500 });
@@ -104,8 +59,27 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
     
-    // Use sheetsSync to update record in both MongoDB and Google Sheets
-    const result = await sheetsSync.updateRecord('results', id, body);
+    // Update record in MongoDB
+    const db = await getDatabase();
+    const collection = db.collection<Result>('results');
+    
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          ...body, 
+          updatedAt: new Date() 
+        } 
+      }
+    );
+
+    // Auto-sync to Google Sheets
+    try {
+      await sheetsSync.syncToSheets('results');
+    } catch (syncError) {
+      console.error('Error syncing to sheets:', syncError);
+      // Don't fail the main operation if sync fails
+    }
     
     return NextResponse.json({ success: true, message: 'Result updated successfully' });
   } catch (error) {
@@ -123,8 +97,19 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Result ID is required' }, { status: 400 });
     }
 
-    // Use sheetsSync to delete record from both MongoDB and Google Sheets
-    const result = await sheetsSync.deleteRecord('results', id);
+    // Delete record from MongoDB
+    const db = await getDatabase();
+    const collection = db.collection<Result>('results');
+    
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+
+    // Auto-sync to Google Sheets
+    try {
+      await sheetsSync.syncToSheets('results');
+    } catch (syncError) {
+      console.error('Error syncing to sheets:', syncError);
+      // Don't fail the main operation if sync fails
+    }
     
     return NextResponse.json({ success: true, message: 'Result deleted successfully' });
   } catch (error) {

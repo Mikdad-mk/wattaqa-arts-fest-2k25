@@ -9,6 +9,7 @@ export default function ProgrammesPage() {
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -120,6 +121,33 @@ export default function ProgrammesPage() {
   const getCategoryColor = (category: string | null | undefined) => {
     if (!category) return 'bg-gray-100 text-gray-800';
     return category === 'arts' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+  };
+
+  // Handle delete programme
+  const handleDelete = async (programmeId: string, programmeName: string) => {
+    if (!confirm(`Are you sure you want to delete "${programmeName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDeleting(programmeId);
+      const response = await fetch(`/api/programmes?id=${programmeId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await fetchProgrammes(); // Refresh the list
+        alert('Programme deleted successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Error deleting programme: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting programme:', error);
+      alert('Error deleting programme');
+    } finally {
+      setDeleting(null);
+    }
   };
   return (
     <>
@@ -288,7 +316,13 @@ export default function ProgrammesPage() {
                       <td className="py-3 px-4">
                         <div className="flex space-x-2">
                           <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                          <button className="text-purple-600 hover:text-purple-800 text-sm font-medium">View</button>
+                          <button 
+                            onClick={() => handleDelete(programme._id!.toString(), programme.name)}
+                            disabled={deleting === programme._id?.toString()}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                          >
+                            {deleting === programme._id?.toString() ? 'Deleting...' : 'Delete'}
+                          </button>
                         </div>
                       </td>
                     </tr>
