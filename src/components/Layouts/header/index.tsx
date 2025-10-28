@@ -72,24 +72,7 @@ export function Header() {
             <span className="text-sm text-gray-600 font-medium">3 Teams Active</span>
           </div>
 
-          {/* Back to Site Button */}
-          <Link 
-            href="/" 
-            className="hidden xl:flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            <span>←</span>
-            <span>Festival Site</span>
-          </Link>
 
-          {/* Quick Actions */}
-          <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-600 transition-all duration-200">
-              <span className="text-lg">📊</span>
-            </button>
-            <button className="p-2 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 text-blue-600 transition-all duration-200">
-              <span className="text-lg">🎭</span>
-            </button>
-          </div>
 
           <ThemeToggleSwitch />
           <Notification />

@@ -35,11 +35,11 @@ export function About() {
                 and competitive sports.
               </p>
               
-              <p className="text-gray-600 leading-relaxed mb-8">
+              {/* <p className="text-gray-600 leading-relaxed mb-8">
                 Our festival celebrates the talents of dedicated students who will compete, create, and inspire in a spirit 
                 of healthy competition and artistic expression. Join us for an unforgettable experience of teamwork, 
                 creativity, and sportsmanship.
-              </p>
+              </p> */}
             </div>
             
             {/* Feature List */}

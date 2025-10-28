@@ -40,26 +40,26 @@ const Breadcrumb = ({ pageName }: BreadcrumbProps) => {
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center space-x-4">
-        <div className={`w-12 h-12 bg-gradient-to-r ${getPageColor(pageName)} rounded-xl flex items-center justify-center shadow-lg`}>
+        <div className={`w-12 h-12 bg-gradient-to-r ${getPageColor(pageName)} rounded-lg flex items-center justify-center`}>
           <span className="text-white text-xl">{getPageIcon(pageName)}</span>
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {pageName}
           </h2>
           <p className="text-sm text-gray-600 mt-1">Festival 2K25 Management</p>
         </div>
       </div>
 
-      <nav className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-2 rounded-full border border-gray-200">
+      <nav className="bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
         <ol className="flex items-center gap-2 text-sm">
           <li>
-            <Link className="font-medium text-gray-600 hover:text-blue-600 transition-colors" href="/admin/dashboard">
+            <Link className="font-medium text-gray-600 hover:text-gray-900 transition-colors" href="/admin/dashboard">
               🏠 Dashboard
             </Link>
           </li>
           <li className="text-gray-400">→</li>
-          <li className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+          <li className="font-bold text-gray-900">
             {pageName}
           </li>
         </ol>

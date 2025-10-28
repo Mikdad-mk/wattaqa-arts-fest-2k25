@@ -9,7 +9,7 @@ const menuItemBaseStyles = cva(
     variants: {
       isActive: {
         true: "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg",
-        false: "text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white",
+        false: "text-gray-600 hover:bg-gray-900 hover:text-white dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-white",
       },
     },
     defaultVariants: {
