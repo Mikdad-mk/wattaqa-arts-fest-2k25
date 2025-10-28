@@ -106,14 +106,14 @@ export default function TeamsPage() {
             </div>
 
             {/* Team Aqsa */}
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg p-4">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-gray-700 to-gray-900 rounded-lg flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold">A</span>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Team Aqsa</h3>
-                  <p className="text-sm text-blue-600">Creative & Athletic</p>
+                  <p className="text-sm text-gray-700">Creative & Athletic</p>
                 </div>
               </div>
               <div className="space-y-2 text-sm">

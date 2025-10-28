@@ -23,6 +23,12 @@ export const NAV_DATA = [
         items: [],
       },
       {
+        title: "Programmes",
+        url: "/admin/programmes",
+        icon: Icons.Calendar,
+        items: [],
+      },
+      {
         title: "Results",
         url: "/admin/results",
         icon: Icons.PieChart,

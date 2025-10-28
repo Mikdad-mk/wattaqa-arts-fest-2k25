@@ -221,7 +221,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center hover:shadow-sm transition-shadow duration-200">
-            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-3">
               <span className="text-white font-bold text-lg">A</span>
             </div>
             <h4 className="text-lg font-bold text-gray-900 mb-2">Team Aqsa</h4>

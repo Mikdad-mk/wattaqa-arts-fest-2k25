@@ -17,7 +17,7 @@ export default function RankingsPage() {
                   <div className="text-4xl animate-bounce">🥇</div>
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">Team Aqsa</h3>
-                    <p className="text-blue-600 font-medium">Creative & Athletic Champions</p>
+                    <p className="text-gray-700 font-medium">Creative & Athletic Champions</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -170,7 +170,7 @@ export default function RankingsPage() {
                 <span className="text-2xl">🏆</span>
               </div>
               <h3 className="font-semibold text-gray-900">Ahmed Ali</h3>
-              <p className="text-sm text-gray-600 mb-2">Team Sumud</p>
+              <p className="text-sm text-gray-600 mb-2">Team Sumud • Chest No. 001</p>
               <p className="text-lg font-bold text-gray-900">45 Points</p>
               <p className="text-xs text-gray-500">Arts Champion</p>
             </div>
@@ -180,7 +180,7 @@ export default function RankingsPage() {
                 <span className="text-2xl">🏆</span>
               </div>
               <h3 className="font-semibold text-gray-900">Fatima Hassan</h3>
-              <p className="text-sm text-gray-600 mb-2">Team Aqsa</p>
+              <p className="text-sm text-gray-600 mb-2">Team Aqsa • Chest No. 002</p>
               <p className="text-lg font-bold text-gray-900">42 Points</p>
               <p className="text-xs text-gray-500">Dance Star</p>
             </div>
@@ -190,7 +190,7 @@ export default function RankingsPage() {
                 <span className="text-2xl">🏆</span>
               </div>
               <h3 className="font-semibold text-gray-900">Omar Khalil</h3>
-              <p className="text-sm text-gray-600 mb-2">Team Inthifada</p>
+              <p className="text-sm text-gray-600 mb-2">Team Inthifada • Chest No. 003</p>
               <p className="text-lg font-bold text-gray-900">40 Points</p>
               <p className="text-xs text-gray-500">Sports Hero</p>
             </div>

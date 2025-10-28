@@ -17,15 +17,22 @@ export default function SearchPage() {
         type: "candidate",
         name: "Ahmed Ali",
         team: "Team Sumud",
-        id: "STU001",
-        details: "Grade 10 • Arts, Music"
+        chestNo: "001",
+        details: "Senior Section • Chest No. 001"
+      },
+      {
+        type: "programme",
+        name: "P001 - Classical Singing",
+        section: "Senior",
+        position: "Individual",
+        details: "Senior • Individual Competition"
       },
       {
         type: "result",
-        name: "Singing Competition",
-        winner: "Team Aqsa",
+        name: "Classical Singing (P001)",
+        winner: "Chest No. 002 - Fatima Hassan",
         date: "March 15, 2025",
-        details: "Individual Category • 10 Points"
+        details: "Senior • Individual • 10 Points"
       },
       {
         type: "team",
@@ -70,9 +77,9 @@ export default function SearchPage() {
                 >
                   <option value="all">All</option>
                   <option value="candidates">Candidates</option>
+                  <option value="programmes">Programmes</option>
                   <option value="teams">Teams</option>
                   <option value="results">Results</option>
-                  <option value="events">Events</option>
                 </select>
               </div>
             </div>
@@ -80,7 +87,7 @@ export default function SearchPage() {
             <div className="flex space-x-4">
               <button
                 type="submit"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg transition-colors duration-200"
               >
                 Search
               </button>
@@ -90,7 +97,7 @@ export default function SearchPage() {
                   setSearchQuery("");
                   setSearchResults([]);
                 }}
-                className="bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-all duration-200"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors duration-200"
               >
                 Clear
               </button>
@@ -162,6 +169,7 @@ export default function SearchPage() {
                       <div className="flex items-start space-x-3">
                         <div className={`w-10 h-10 bg-gradient-to-r ${getIconColor(result.type)} rounded-lg flex items-center justify-center shadow-lg`}>
                           {result.type === 'candidate' && <span className="text-white">👤</span>}
+                          {result.type === 'programme' && <span className="text-white">📋</span>}
                           {result.type === 'result' && <span className="text-white">🏆</span>}
                           {result.type === 'team' && <span className="text-white">👥</span>}
                         </div>
@@ -169,6 +177,9 @@ export default function SearchPage() {
                           <h3 className={`font-bold ${getTextColor(result.type)}`}>{result.name}</h3>
                           <p className={`text-sm ${getTextColor(result.type)} font-medium`}>{result.details}</p>
                           {result.team && <p className={`text-sm ${getTextColor(result.type)}`}>Team: {result.team}</p>}
+                          {result.chestNo && <p className={`text-sm ${getTextColor(result.type)}`}>Chest No: {result.chestNo}</p>}
+                          {result.section && <p className={`text-sm ${getTextColor(result.type)}`}>Section: {result.section}</p>}
+                          {result.position && <p className={`text-sm ${getTextColor(result.type)}`}>Position: {result.position}</p>}
                           {result.winner && <p className={`text-sm ${getTextColor(result.type)}`}>Winner: {result.winner}</p>}
                           {result.captain && <p className={`text-sm ${getTextColor(result.type)}`}>Captain: {result.captain}</p>}
                         </div>

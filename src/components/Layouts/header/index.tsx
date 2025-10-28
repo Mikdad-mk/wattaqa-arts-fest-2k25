@@ -12,7 +12,7 @@ export function Header() {
   const { toggleSidebar, isMobile } = useSidebarContext();
 
   return (
-    <header 
+    <header
       className="sticky top-0 z-30 bg-white border-b border-gray-200 font-poppins shadow-sm"
       style={{
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
@@ -38,9 +38,8 @@ export function Header() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-gray-900">
-                Festival 2K25
+                WATTAQA 2K25
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 ml-2">
-                  Admin
                 </span>
               </h1>
               <p className="text-sm text-gray-600">Arts & Sports Management</p>
@@ -66,7 +65,7 @@ export function Header() {
           <div className="hidden lg:flex items-center space-x-2 mr-4">
             <div className="flex -space-x-1">
               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white shadow-sm"></div>
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-full border-2 border-white shadow-sm"></div>
+              <div className="w-8 h-8 bg-gradient-to-r from-gray-700 to-gray-900 rounded-full border-2 border-white shadow-sm"></div>
               <div className="w-8 h-8 bg-gradient-to-r from-red-400 to-rose-500 rounded-full border-2 border-white shadow-sm"></div>
             </div>
             <span className="text-sm text-gray-600 font-medium">3 Teams Active</span>
