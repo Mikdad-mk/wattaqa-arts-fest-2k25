@@ -7,7 +7,14 @@ export async function GET() {
     const db = await getDatabase();
     const collection = db.collection<Programme>('programmes');
     
-    let programmes = await collection.find({}).toArray();
+    // Filter out blank/empty programmes using MongoDB query
+    let programmes = await collection.find({
+      name: { $exists: true, $ne: '', $ne: null },
+      code: { $exists: true, $ne: '', $ne: null },
+      category: { $exists: true, $ne: '', $ne: null },
+      section: { $exists: true, $ne: '', $ne: null },
+      positionType: { $exists: true, $ne: '', $ne: null }
+    }).toArray();
     
     // If no programmes exist, create default programmes
     if (programmes.length === 0) {
@@ -39,7 +46,13 @@ export async function GET() {
       }));
       
       await collection.insertMany(programmesWithDates);
-      programmes = await collection.find({}).toArray();
+      programmes = await collection.find({
+        name: { $exists: true, $ne: '', $ne: null },
+        code: { $exists: true, $ne: '', $ne: null },
+        category: { $exists: true, $ne: '', $ne: null },
+        section: { $exists: true, $ne: '', $ne: null },
+        positionType: { $exists: true, $ne: '', $ne: null }
+      }).toArray();
     }
     
     return NextResponse.json(programmes);

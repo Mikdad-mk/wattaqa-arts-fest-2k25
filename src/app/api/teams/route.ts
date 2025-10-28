@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { Team } from '@/types';
 import { ObjectId } from 'mongodb';
-import { sheetsSync } from '@/lib/sheetsSync';
 
 export async function GET() {
   try {
@@ -11,36 +10,40 @@ export async function GET() {
     
     let teams = await collection.find({}).toArray();
     
-    // If no teams exist, create default teams
+    // If no teams exist, create the 3 fixed festival teams
+    // These teams are permanent and cannot be deleted
     if (teams.length === 0) {
       const defaultTeams: Team[] = [
         {
-          name: 'Team Sumud',
+          code: 'SMD',
+          name: 'SUMUD',
           color: 'green',
-          description: 'Arts & Sports Excellence',
-          captain: 'Ahmed Ali (001)',
-          members: 45,
-          points: 238,
+          description: 'Team Sumud - Steadfastness and Perseverance',
+          captain: 'To be assigned',
+          members: 0,
+          points: 0,
           createdAt: new Date(),
           updatedAt: new Date()
         },
         {
-          name: 'Team Aqsa',
-          color: 'gray',
-          description: 'Creative & Athletic',
-          captain: 'Fatima Hassan (002)',
-          members: 45,
-          points: 245,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          name: 'Team Inthifada',
+          code: 'INT',
+          name: 'INTIFADA',
           color: 'red',
-          description: 'Innovation & Competition',
-          captain: 'Omar Khalil (003)',
-          members: 45,
-          points: 232,
+          description: 'Team Intifada - Uprising and Resistance',
+          captain: 'To be assigned',
+          members: 0,
+          points: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          code: 'AQS',
+          name: 'AQSA',
+          color: 'black',
+          description: 'Team Aqsa - Sacred and Noble',
+          captain: 'To be assigned',
+          members: 0,
+          points: 0,
           createdAt: new Date(),
           updatedAt: new Date()
         }
@@ -59,12 +62,21 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Note: Teams are now fixed (SMD, INT, AQS) and should not be created dynamically
+    // This endpoint is kept for compatibility but new teams should not be added
     const body = await request.json();
+    const db = await getDatabase();
+    const collection = db.collection<Team>('teams');
     
-    // Use sheetsSync to add record to both MongoDB and Google Sheets
-    const result = await sheetsSync.addRecord('teams', body);
+    const newTeam: Team = {
+      ...body,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     
-    return NextResponse.json({ success: true, id: result.id });
+    const result = await collection.insertOne(newTeam);
+    
+    return NextResponse.json({ success: true, id: result.insertedId });
   } catch (error) {
     console.error('Error creating team:', error);
     return NextResponse.json({ error: 'Failed to create team' }, { status: 500 });
@@ -81,9 +93,26 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
+    const db = await getDatabase();
+    const collection = db.collection<Team>('teams');
     
-    // Use sheetsSync to update record in both MongoDB and Google Sheets
-    const result = await sheetsSync.updateRecord('teams', id, body);
+    const updateData = {
+      ...body,
+      updatedAt: new Date()
+    };
+    
+    delete updateData._id;
+    
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+    
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+    }
+    
+    // Note: Automatic Google Sheets sync temporarily disabled to avoid quota issues
     
     return NextResponse.json({ success: true, message: 'Team updated successfully' });
   } catch (error) {
@@ -94,6 +123,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    // Note: The three main festival teams (SMD, INT, AQS) should not be deleted
+    // This endpoint is kept for compatibility but main teams are protected
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -101,8 +132,22 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Team ID is required' }, { status: 400 });
     }
 
-    // Use sheetsSync to delete record from both MongoDB and Google Sheets
-    const result = await sheetsSync.deleteRecord('teams', id);
+    const db = await getDatabase();
+    const collection = db.collection<Team>('teams');
+    
+    // Check if this is one of the main teams
+    const team = await collection.findOne({ _id: new ObjectId(id) });
+    if (team && ['SUMUD', 'INTIFADA', 'AQSA'].includes(team.name)) {
+      return NextResponse.json({ error: 'Cannot delete main festival teams' }, { status: 403 });
+    }
+    
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+    }
+    
+    // Note: Automatic Google Sheets sync temporarily disabled to avoid quota issues
     
     return NextResponse.json({ success: true, message: 'Team deleted successfully' });
   } catch (error) {

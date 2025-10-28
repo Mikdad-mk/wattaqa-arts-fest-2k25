@@ -17,13 +17,33 @@ export default function ProgrammesPage() {
     positionType: '' as 'individual' | 'group' | 'general' | ''
   });
 
+  // Filter out blank/empty programmes
+  const filterValidProgrammes = (programmes: Programme[]) => {
+    return programmes.filter(programme => 
+      programme.name && 
+      programme.name.trim() !== '' &&
+      programme.code && 
+      programme.code.trim() !== '' &&
+      programme.category && 
+      programme.category.trim() !== '' &&
+      programme.section && 
+      programme.section.trim() !== '' &&
+      programme.positionType && 
+      programme.positionType.trim() !== ''
+    );
+  };
+
   // Fetch programmes from API
   const fetchProgrammes = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/programmes');
       const data = await response.json();
-      setProgrammes(data);
+      
+      // Filter out blank/empty programmes
+      const validProgrammes = filterValidProgrammes(data);
+      
+      setProgrammes(validProgrammes);
     } catch (error) {
       console.error('Error fetching programmes:', error);
     } finally {
@@ -91,12 +111,14 @@ export default function ProgrammesPage() {
   };
 
   // Get category icon
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string | null | undefined) => {
+    if (!category) return '❓';
     return category === 'arts' ? '🎨' : '⚽';
   };
 
   // Get category color
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = (category: string | null | undefined) => {
+    if (!category) return 'bg-gray-100 text-gray-800';
     return category === 'arts' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
   };
   return (
@@ -243,24 +265,24 @@ export default function ProgrammesPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${getCategoryColor(programme.category)}`}>
-                          {programme.category.charAt(0).toUpperCase() + programme.category.slice(1)}
+                          {programme.category ? programme.category.charAt(0).toUpperCase() + programme.category.slice(1) : 'Unknown'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                          {programme.section.charAt(0).toUpperCase() + programme.section.slice(1).replace('-', ' ')}
+                          {programme.section ? programme.section.charAt(0).toUpperCase() + programme.section.slice(1).replace('-', ' ') : 'Unknown'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">
-                          {programme.positionType.charAt(0).toUpperCase() + programme.positionType.slice(1)}
+                          {programme.positionType ? programme.positionType.charAt(0).toUpperCase() + programme.positionType.slice(1) : 'Unknown'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                           programme.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
                         }`}>
-                          {programme.status.charAt(0).toUpperCase() + programme.status.slice(1)}
+                          {programme.status ? programme.status.charAt(0).toUpperCase() + programme.status.slice(1) : 'Unknown'}
                         </span>
                       </td>
                       <td className="py-3 px-4">

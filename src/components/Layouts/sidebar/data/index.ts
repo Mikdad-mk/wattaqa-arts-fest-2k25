@@ -52,12 +52,6 @@ export const NAV_DATA = [
         icon: Icons.Authentication,
         items: [],
       },
-      {
-        title: "Import Data",
-        url: "/admin/import",
-        icon: Icons.Table,
-        items: [],
-      },
 
     ],
   },

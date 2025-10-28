@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 
 export interface Team {
   _id?: ObjectId | string;
+  code: string;
   name: string;
   color: string;
   description: string;

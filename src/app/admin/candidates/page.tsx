@@ -18,6 +18,20 @@ export default function CandidatesPage() {
     section: '' as 'senior' | 'junior' | 'sub-junior' | ''
   });
 
+  // Filter out blank/empty candidates
+  const filterValidCandidates = (candidates: Candidate[]) => {
+    return candidates.filter(candidate => 
+      candidate.name && 
+      candidate.name.trim() !== '' &&
+      candidate.chestNumber && 
+      candidate.chestNumber.trim() !== '' &&
+      candidate.team && 
+      candidate.team.trim() !== '' &&
+      candidate.section && 
+      candidate.section.trim() !== ''
+    );
+  };
+
   // Fetch candidates and teams from API
   const fetchData = async () => {
     try {
@@ -32,7 +46,10 @@ export default function CandidatesPage() {
         teamsRes.json()
       ]);
       
-      setCandidates(candidatesData);
+      // Filter out blank/empty candidates
+      const validCandidates = filterValidCandidates(candidatesData);
+      
+      setCandidates(validCandidates);
       setTeams(teamsData);
     } catch (error) {
       console.error('Error fetching data:', error);

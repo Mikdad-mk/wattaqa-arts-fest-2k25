@@ -9,15 +9,21 @@ export async function GET() {
     const db = await getDatabase();
     const collection = db.collection<Candidate>('candidates');
     
-    let candidates = await collection.find({}).toArray();
+    // Filter out blank/empty candidates using MongoDB query
+    let candidates = await collection.find({
+      name: { $exists: true, $ne: '', $ne: null },
+      chestNumber: { $exists: true, $ne: '', $ne: null },
+      team: { $exists: true, $ne: '', $ne: null },
+      section: { $exists: true, $ne: '', $ne: null }
+    }).toArray();
     
-    // If no candidates exist, create default candidates
+    // If no valid candidates exist, create default candidates
     if (candidates.length === 0) {
       const defaultCandidates: Candidate[] = [
         {
           chestNumber: '001',
           name: 'Ahmed Ali',
-          team: 'Team Sumud',
+          team: 'SUMUD',
           section: 'senior',
           points: 45,
           createdAt: new Date(),
@@ -26,7 +32,7 @@ export async function GET() {
         {
           chestNumber: '002',
           name: 'Fatima Hassan',
-          team: 'Team Aqsa',
+          team: 'AQSA',
           section: 'junior',
           points: 42,
           createdAt: new Date(),
@@ -35,7 +41,7 @@ export async function GET() {
         {
           chestNumber: '003',
           name: 'Omar Khalil',
-          team: 'Team Inthifada',
+          team: 'INTIFADA',
           section: 'sub-junior',
           points: 40,
           createdAt: new Date(),
@@ -44,7 +50,12 @@ export async function GET() {
       ];
       
       await collection.insertMany(defaultCandidates);
-      candidates = await collection.find({}).toArray();
+      candidates = await collection.find({
+        name: { $exists: true, $ne: '', $ne: null },
+        chestNumber: { $exists: true, $ne: '', $ne: null },
+        team: { $exists: true, $ne: '', $ne: null },
+        section: { $exists: true, $ne: '', $ne: null }
+      }).toArray();
     }
     
     return NextResponse.json(candidates);
@@ -57,16 +68,21 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const db = await getDatabase();
+    const collection = db.collection<Candidate>('candidates');
     
-    const candidateData = {
+    const newCandidate: Candidate = {
       ...body,
-      points: 0 // New candidates start with 0 points
+      points: 0, // New candidates start with 0 points
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     
-    // Use sheetsSync to add record to both MongoDB and Google Sheets
-    const result = await sheetsSync.addRecord('candidates', candidateData);
+    const result = await collection.insertOne(newCandidate);
     
-    return NextResponse.json({ success: true, id: result.id });
+    // Note: Automatic Google Sheets sync temporarily disabled to avoid quota issues
+    
+    return NextResponse.json({ success: true, id: result.insertedId });
   } catch (error) {
     console.error('Error creating candidate:', error);
     return NextResponse.json({ error: 'Failed to create candidate' }, { status: 500 });
