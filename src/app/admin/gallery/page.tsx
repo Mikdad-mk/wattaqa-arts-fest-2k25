@@ -14,7 +14,7 @@ export default function GalleryPage() {
               <div className="text-4xl mb-4">📸</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Festival Images</h3>
               <p className="text-gray-600 mb-4">Drag and drop images here, or click to select files</p>
-              <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">
                 Select Images
               </button>
             </div>
@@ -24,7 +24,7 @@ export default function GalleryPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="">Select category</option>
                   <option value="events">Events</option>
                   <option value="teams">Teams</option>
@@ -37,7 +37,7 @@ export default function GalleryPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Event/Team
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="">Select event or team</option>
                   <option value="singing">Singing Competition</option>
                   <option value="dance">Dance Performance</option>
@@ -135,7 +135,7 @@ export default function GalleryPage() {
           </div>
           
           <div className="mt-6 flex space-x-4">
-            <button className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg transition-colors">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
               Bulk Upload
             </button>
             <button className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors">

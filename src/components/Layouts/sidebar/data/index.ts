@@ -46,6 +46,19 @@ export const NAV_DATA = [
         icon: Icons.Table,
         items: [],
       },
+      {
+        title: "Google Sheets Sync",
+        url: "/admin/sync",
+        icon: Icons.Authentication,
+        items: [],
+      },
+      {
+        title: "Import Data",
+        url: "/admin/import",
+        icon: Icons.Table,
+        items: [],
+      },
+
     ],
   },
   {

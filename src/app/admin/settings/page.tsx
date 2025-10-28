@@ -18,7 +18,7 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   defaultValue="Wattaqa Arts Festival 2K25"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
               <div>
@@ -28,7 +28,7 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   defaultValue="2025"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
             </div>
@@ -41,7 +41,7 @@ export default function SettingsPage() {
                 <input
                   type="date"
                   defaultValue="2025-03-10"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
               <div>
@@ -51,7 +51,7 @@ export default function SettingsPage() {
                 <input
                   type="date"
                   defaultValue="2025-03-16"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function SettingsPage() {
               <input
                 type="text"
                 defaultValue="Wattaqa School Campus"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
               />
             </div>
 
@@ -74,13 +74,13 @@ export default function SettingsPage() {
               <textarea
                 rows={3}
                 defaultValue="Annual arts and sports festival celebrating creativity, talent, and teamwork among students."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
               />
             </div>
 
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
             >
               Save Festival Settings
             </button>
@@ -207,7 +207,7 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   defaultValue="Festival 2K25 - Wattaqa Arts Festival"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
               <div>
@@ -217,7 +217,7 @@ export default function SettingsPage() {
                 <input
                   type="email"
                   defaultValue="info@wattaqafestival.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
             </div>
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Time Zone
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="UTC">UTC</option>
                   <option value="Asia/Dubai" selected>Asia/Dubai (GMT+4)</option>
                   <option value="Asia/Riyadh">Asia/Riyadh (GMT+3)</option>
@@ -296,7 +296,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Language
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="en" selected>English</option>
                   <option value="ar">Arabic</option>
                 </select>
@@ -306,7 +306,7 @@ export default function SettingsPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-3">Data Management</h3>
               <div className="flex space-x-4">
-                <button className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
                   Export All Data
                 </button>
                 <button className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm transition-colors">
@@ -321,7 +321,7 @@ export default function SettingsPage() {
             <div className="pt-4 border-t border-gray-200">
               <button
                 type="submit"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
               >
                 Save All Settings
               </button>

@@ -1,115 +1,227 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
+import { FestivalInfo, Team, Programme, Schedule } from '@/types';
 
 export default function BasicPage() {
+  const [festivalInfo, setFestivalInfo] = useState<FestivalInfo | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [schedule, setSchedule] = useState<Schedule[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all data in parallel
+        const [festivalRes, teamsRes, programmesRes, scheduleRes] = await Promise.all([
+          fetch('/api/festival-info'),
+          fetch('/api/teams'),
+          fetch('/api/programmes'),
+          fetch('/api/schedule')
+        ]);
+
+        const [festivalData, teamsData, programmesData, scheduleData] = await Promise.all([
+          festivalRes.json(),
+          teamsRes.json(),
+          programmesRes.json(),
+          scheduleRes.json()
+        ]);
+
+        setFestivalInfo(festivalData);
+        setTeams(teamsData);
+        setProgrammes(programmesData);
+        setSchedule(scheduleData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const getTeamColor = (teamName: string) => {
+    switch (teamName.toLowerCase()) {
+      case 'team sumud': return 'bg-green-500';
+      case 'team aqsa': return 'bg-gray-800';
+      case 'team inthifada': return 'bg-red-500';
+      default: return 'bg-blue-500';
+    }
+  };
+
+  const formatDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const artsProgrammes = programmes.filter(p => p.category === 'arts');
+  const sportsProgrammes = programmes.filter(p => p.category === 'sports');
+
+  if (loading) {
+    return (
+      <>
+        <Breadcrumb pageName="Basic" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading festival data...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <Breadcrumb pageName="Basic" />
 
       <div className="space-y-6">
-        {/* Festival Overview */}
+        {/* Festival 2K25 Structure */}
         <ShowcaseSection title="Festival 2K25 Structure">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
                   <span className="text-lg mr-2">🎭</span>
                   Festival Information
                 </h3>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Festival Name:</span>
-                    <span className="text-gray-900 font-medium">Wattaqa Arts Festival 2K25</span>
+                    <span className="text-gray-900 font-medium">{festivalInfo?.name || 'Loading...'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Duration:</span>
-                    <span className="text-gray-900 font-medium">7 Days</span>
+                    <span className="text-gray-900 font-medium">{schedule.length} Days</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Start Date:</span>
-                    <span className="text-gray-900 font-medium">March 10, 2025</span>
+                    <span className="text-gray-900 font-medium">{festivalInfo?.startDate ? formatDate(festivalInfo.startDate) : 'Loading...'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">End Date:</span>
-                    <span className="text-gray-900 font-medium">March 16, 2025</span>
+                    <span className="text-gray-900 font-medium">{festivalInfo?.endDate ? formatDate(festivalInfo.endDate) : 'Loading...'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Venue:</span>
-                    <span className="text-gray-900 font-medium">Wattaqa School Campus</span>
+                    <span className="text-gray-900 font-medium">{festivalInfo?.venue || 'Loading...'}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
                   <span className="text-lg mr-2">📊</span>
                   Festival Statistics
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">135</div>
+                    <div className="text-2xl font-bold text-gray-900">{teams.reduce((sum, team) => sum + team.members, 0)}</div>
                     <p className="text-sm text-gray-600">Total Students</p>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">3</div>
+                    <div className="text-2xl font-bold text-gray-900">{teams.length}</div>
                     <p className="text-sm text-gray-600">Teams</p>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">200+</div>
-                    <p className="text-sm text-gray-600">Programs</p>
+                    <div className="text-2xl font-bold text-gray-900">{programmes.length}</div>
+                    <p className="text-sm text-gray-600">Programmes</p>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">15</div>
+                    <div className="text-2xl font-bold text-gray-900">2</div>
                     <p className="text-sm text-gray-600">Categories</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <span className="text-lg mr-2">🏗️</span>
+                  Programme Structure
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm">🎨</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Arts Category</p>
+                        <p className="text-xs text-gray-600">Individual & Group</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{artsProgrammes.length} programmes</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm">⚽</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Sports Category</p>
+                        <p className="text-xs text-gray-600">Individual & Group</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{sportsProgrammes.length} programmes</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
                   <span className="text-lg mr-2">👥</span>
                   Team Structure
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-700 font-bold text-sm">S</span>
+                  {teams.map((team, index) => (
+                    <div key={team._id || index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 ${getTeamColor(team.name)} rounded-lg flex items-center justify-center`}>
+                          <span className="text-white font-bold text-sm">{team.name.split(' ')[1]?.[0] || 'T'}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{team.name}</p>
+                          <p className="text-xs text-gray-600">{team.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Team Sumud</p>
-                        <p className="text-xs text-gray-600">Arts & Sports Excellence</p>
-                      </div>
+                      <span className="text-sm font-medium text-gray-900">{team.members} members</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">45 members</span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <span className="text-lg mr-2">🏆</span>
+                  Section Categories
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-lg font-bold text-gray-900">Senior</div>
+                    <p className="text-xs text-gray-600">Ages 16-18</p>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-700 font-bold text-sm">A</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Team Aqsa</p>
-                        <p className="text-xs text-gray-600">Creative & Athletic</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">45 members</span>
+                  <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-lg font-bold text-gray-900">Junior</div>
+                    <p className="text-xs text-gray-600">Ages 13-15</p>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-700 font-bold text-sm">I</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Team Inthifada</p>
-                        <p className="text-xs text-gray-600">Innovation & Competition</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">45 members</span>
+                  <div className="text-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="text-lg font-bold text-gray-900">Sub Junior</div>
+                    <p className="text-xs text-gray-600">Ages 10-12</p>
+                  </div>
+                  <div className="text-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="text-lg font-bold text-gray-900">General</div>
+                    <p className="text-xs text-gray-600">All Ages</p>
                   </div>
                 </div>
               </div>
@@ -117,142 +229,73 @@ export default function BasicPage() {
           </div>
         </ShowcaseSection>
 
-        {/* Program Categories */}
-        <ShowcaseSection title="Program Categories">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-6 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300">
-              <div className="text-center mb-4">
-                <div className="text-4xl mb-3">🎨</div>
-                <h3 className="font-bold text-gray-900 text-lg">Arts & Crafts</h3>
+        {/* Programme Categories */}
+        <ShowcaseSection title="Programme Categories">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="text-center mb-6">
+                <div className="text-6xl mb-4">🎨</div>
+                <h3 className="font-bold text-gray-900 text-2xl mb-2">Arts</h3>
+                <p className="text-gray-600 text-sm">Creative & Artistic Programmes</p>
               </div>
-              <ul className="text-sm text-purple-700 space-y-2 font-medium">
-                <li>• Painting Competition</li>
-                <li>• Sculpture Making</li>
-                <li>• Calligraphy</li>
-                <li>• Digital Art</li>
-                <li>• Handicrafts</li>
+              <ul className="text-sm text-gray-700 space-y-3 font-medium">
+                {artsProgrammes.map((programme, index) => (
+                  <li key={programme._id || index} className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span>{programme.name}</span>
+                  </li>
+                ))}
               </ul>
-              <div className="mt-4 text-center">
-                <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full font-medium shadow-lg">25 Programs</span>
+              <div className="mt-6 text-center">
+                <span className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">{artsProgrammes.length} Programmes</span>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300">
-              <div className="text-center mb-4">
-                <div className="text-4xl mb-3">🎵</div>
-                <h3 className="font-bold text-gray-900 text-lg">Music & Performance</h3>
+            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="text-center mb-6">
+                <div className="text-6xl mb-4">⚽</div>
+                <h3 className="font-bold text-gray-900 text-2xl mb-2">Sports</h3>
+                <p className="text-gray-600 text-sm">Athletic & Physical Programmes</p>
               </div>
-              <ul className="text-sm text-blue-700 space-y-2 font-medium">
-                <li>• Singing Competition</li>
-                <li>• Instrumental Music</li>
-                <li>• Choir Performance</li>
-                <li>• Beatboxing</li>
-                <li>• Music Composition</li>
+              <ul className="text-sm text-gray-700 space-y-3 font-medium">
+                {sportsProgrammes.map((programme, index) => (
+                  <li key={programme._id || index} className="flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>{programme.name}</span>
+                  </li>
+                ))}
               </ul>
-              <div className="mt-4 text-center">
-                <span className="text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-1 rounded-full font-medium shadow-lg">20 Programs</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300">
-              <div className="text-center mb-4">
-                <div className="text-4xl mb-3">💃</div>
-                <h3 className="font-bold text-gray-900 text-lg">Dance & Movement</h3>
-              </div>
-              <ul className="text-sm text-green-700 space-y-2 font-medium">
-                <li>• Classical Dance</li>
-                <li>• Modern Dance</li>
-                <li>• Folk Dance</li>
-                <li>• Hip Hop</li>
-                <li>• Choreography</li>
-              </ul>
-              <div className="mt-4 text-center">
-                <span className="text-xs bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full font-medium shadow-lg">18 Programs</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-6 hover:shadow-lg hover:shadow-red-500/25 transition-all duration-300">
-              <div className="text-center mb-4">
-                <div className="text-4xl mb-3">🎭</div>
-                <h3 className="font-bold text-gray-900 text-lg">Drama & Theater</h3>
-              </div>
-              <ul className="text-sm text-red-700 space-y-2 font-medium">
-                <li>• Stage Drama</li>
-                <li>• Monologue</li>
-                <li>• Comedy Acts</li>
-                <li>• Mime Performance</li>
-                <li>• Storytelling</li>
-              </ul>
-              <div className="mt-4 text-center">
-                <span className="text-xs bg-gradient-to-r from-red-500 to-rose-500 text-white px-3 py-1 rounded-full font-medium shadow-lg">15 Programs</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl p-6 hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300">
-              <div className="text-center mb-4">
-                <div className="text-4xl mb-3">⚽</div>
-                <h3 className="font-bold text-gray-900 text-lg">Sports & Athletics</h3>
-              </div>
-              <ul className="text-sm text-orange-700 space-y-2 font-medium">
-                <li>• Football Tournament</li>
-                <li>• Basketball</li>
-                <li>• Track & Field</li>
-                <li>• Table Tennis</li>
-                <li>• Badminton</li>
-              </ul>
-              <div className="mt-4 text-center">
-                <span className="text-xs bg-gradient-to-r from-orange-500 to-yellow-500 text-white px-3 py-1 rounded-full font-medium shadow-lg">22 Programs</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6 hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300">
-              <div className="text-center mb-4">
-                <div className="text-4xl mb-3">📚</div>
-                <h3 className="font-bold text-gray-900 text-lg">Literature & Writing</h3>
-              </div>
-              <ul className="text-sm text-indigo-700 space-y-2 font-medium">
-                <li>• Poetry Competition</li>
-                <li>• Essay Writing</li>
-                <li>• Short Story</li>
-                <li>• Debate</li>
-                <li>• Speech Contest</li>
-              </ul>
-              <div className="mt-4 text-center">
-                <span className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1 rounded-full font-medium shadow-lg">12 Programs</span>
+              <div className="mt-6 text-center">
+                <span className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium">{sportsProgrammes.length} Programmes</span>
               </div>
             </div>
           </div>
         </ShowcaseSection>
 
-        {/* Festival Schedule */}
+        {/* Festival Schedule Overview */}
         <ShowcaseSection title="Festival Schedule Overview">
           <div className="space-y-4">
-            {[
-              { day: "Day 1", date: "March 10", events: "Opening Ceremony, Arts Competitions", status: "Completed" },
-              { day: "Day 2", date: "March 11", events: "Music & Dance Performances", status: "Completed" },
-              { day: "Day 3", date: "March 12", events: "Sports Events, Drama Competitions", status: "Completed" },
-              { day: "Day 4", date: "March 13", events: "Literature & Writing Contests", status: "In Progress" },
-              { day: "Day 5", date: "March 14", events: "Team Challenges, Group Events", status: "Upcoming" },
-              { day: "Day 6", date: "March 15", events: "Finals & Semi-Finals", status: "Upcoming" },
-              { day: "Day 7", date: "March 16", events: "Closing Ceremony, Awards", status: "Upcoming" }
-            ].map((schedule, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center">
-                    <span className="font-bold text-gray-700">{index + 1}</span>
+            {schedule.map((scheduleItem, index) => (
+              <div key={scheduleItem._id || index} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="font-bold text-white">{scheduleItem.day}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-lg">Day {scheduleItem.day} - {formatDate(scheduleItem.date)}</h3>
+                      <p className="text-gray-600 font-medium">{scheduleItem.events}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{schedule.day} - {schedule.date}</h3>
-                    <p className="text-sm text-gray-600">{schedule.events}</p>
-                  </div>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                    scheduleItem.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    scheduleItem.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {scheduleItem.status.charAt(0).toUpperCase() + scheduleItem.status.slice(1).replace('-', ' ')}
+                  </span>
                 </div>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                  schedule.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                  schedule.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {schedule.status}
-                </span>
+                <p className="text-sm text-gray-600 ml-16">{scheduleItem.details}</p>
               </div>
             ))}
           </div>

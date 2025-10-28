@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 
 interface Winner {
   id: string;
@@ -63,21 +62,21 @@ export default function ResultsPage() {
         <button
           type="button"
           onClick={() => addWinner(position)}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition-colors"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
         >
           + Add More
         </button>
       </div>
       
       <div className="space-y-2">
-        {winners.map((winner, index) => (
+        {winners.map((winner) => (
           <div key={winner.id} className="flex items-center space-x-2">
             <input
               type="text"
               placeholder="Enter chest number or team name"
               value={winner.name}
               onChange={(e) => updateWinner(position, winner.id, e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
             />
             {winners.length > 1 && (
               <button
@@ -98,16 +97,19 @@ export default function ResultsPage() {
     <>
       <Breadcrumb pageName="Results" />
 
-      <div className="space-y-6">
-        {/* Add New Result */}
-        <ShowcaseSection title="Add New Result">
+      {/* Single Background Container */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-12">
+        
+        {/* Add New Result Section */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Result</h2>
           <form className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Programme
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="">Select programme</option>
                   <option value="P001">P001 - Classical Singing</option>
                   <option value="P002">P002 - Group Dance</option>
@@ -120,7 +122,7 @@ export default function ResultsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Section
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="">Select section</option>
                   <option value="senior">Senior</option>
                   <option value="junior">Junior</option>
@@ -132,7 +134,7 @@ export default function ResultsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Grade
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="">Select grade</option>
                   <option value="A">Grade A</option>
                   <option value="B">Grade B</option>
@@ -146,7 +148,7 @@ export default function ResultsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Position Type
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700">
                   <option value="">Select position</option>
                   <option value="individual">Individual</option>
                   <option value="group">Group</option>
@@ -176,7 +178,7 @@ export default function ResultsPage() {
                   type="number"
                   placeholder="Enter points"
                   defaultValue="10"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
               <div>
@@ -187,7 +189,7 @@ export default function ResultsPage() {
                   type="number"
                   placeholder="Enter points"
                   defaultValue="7"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
               <div>
@@ -198,7 +200,7 @@ export default function ResultsPage() {
                   type="number"
                   placeholder="Enter points"
                   defaultValue="5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
             </div>
@@ -210,24 +212,59 @@ export default function ResultsPage() {
               <textarea
                 rows={3}
                 placeholder="Enter any additional notes about the result"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
               />
             </div>
 
             <button
               type="submit"
-              className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg transition-colors duration-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
             >
               Add Result
             </button>
           </form>
-        </ShowcaseSection>
+        </div>
 
-        {/* Recent Results */}
-        <ShowcaseSection title="Recent Results">
+        {/* Results Statistics Section */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Results Statistics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-3xl mb-3">📊</div>
+              <h3 className="font-semibold text-gray-900 mb-2">Total Results</h3>
+              <p className="text-2xl font-bold text-gray-900">18</p>
+              <p className="text-sm text-gray-600">Completed programmes</p>
+            </div>
+            
+            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-3xl mb-3">🏆</div>
+              <h3 className="font-semibold text-gray-900 mb-2">Team Sumud</h3>
+              <p className="text-2xl font-bold text-green-600">125</p>
+              <p className="text-sm text-gray-600">Total points</p>
+            </div>
+            
+            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-3xl mb-3">🥇</div>
+              <h3 className="font-semibold text-gray-900 mb-2">Team Aqsa</h3>
+              <p className="text-2xl font-bold text-gray-700">118</p>
+              <p className="text-sm text-gray-600">Total points</p>
+            </div>
+            
+            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-3xl mb-3">🎯</div>
+              <h3 className="font-semibold text-gray-900 mb-2">Team Inthifada</h3>
+              <p className="text-2xl font-bold text-red-600">112</p>
+              <p className="text-sm text-gray-600">Total points</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Results Section */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Results</h2>
           <div className="space-y-4">
             {/* Result Item 1 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
@@ -275,7 +312,7 @@ export default function ResultsPage() {
             </div>
 
             {/* Result Item 2 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
@@ -323,7 +360,7 @@ export default function ResultsPage() {
             </div>
 
             {/* Result Item 3 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
@@ -370,40 +407,8 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-        </ShowcaseSection>
+        </div>
 
-        {/* Results Statistics */}
-        <ShowcaseSection title="Results Statistics">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-3xl mb-3">📊</div>
-              <h3 className="font-semibold text-gray-900 mb-2">Total Results</h3>
-              <p className="text-2xl font-bold text-gray-900">18</p>
-              <p className="text-sm text-gray-600">Completed programmes</p>
-            </div>
-            
-            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-3xl mb-3">🏆</div>
-              <h3 className="font-semibold text-gray-900 mb-2">Team Sumud</h3>
-              <p className="text-2xl font-bold text-green-600">125</p>
-              <p className="text-sm text-gray-600">Total points</p>
-            </div>
-            
-            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-3xl mb-3">🥇</div>
-              <h3 className="font-semibold text-gray-900 mb-2">Team Aqsa</h3>
-              <p className="text-2xl font-bold text-gray-700">118</p>
-              <p className="text-sm text-gray-600">Total points</p>
-            </div>
-            
-            <div className="text-center p-6 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-3xl mb-3">🎯</div>
-              <h3 className="font-semibold text-gray-900 mb-2">Team Inthifada</h3>
-              <p className="text-2xl font-bold text-red-600">112</p>
-              <p className="text-sm text-gray-600">Total points</p>
-            </div>
-          </div>
-        </ShowcaseSection>
       </div>
     </>
   );
