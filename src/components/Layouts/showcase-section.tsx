@@ -8,13 +8,32 @@ type PropsType = {
 };
 
 export function ShowcaseSection({ title, children, className }: PropsType) {
-  return (
-    <div className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
-      <h2 className="border-b border-stroke px-4 py-4 font-medium text-dark dark:border-dark-3 dark:text-white sm:px-6 xl:px-7.5">
-        {title}
-      </h2>
+  const getSectionIcon = (title: string) => {
+    if (title.toLowerCase().includes('team')) return '👥';
+    if (title.toLowerCase().includes('candidate')) return '🎓';
+    if (title.toLowerCase().includes('result')) return '🏆';
+    if (title.toLowerCase().includes('search')) return '🔍';
+    if (title.toLowerCase().includes('gallery')) return '📸';
+    if (title.toLowerCase().includes('print')) return '🖨️';
+    if (title.toLowerCase().includes('setting')) return '⚙️';
+    if (title.toLowerCase().includes('form')) return '📝';
+    if (title.toLowerCase().includes('report')) return '📊';
+    if (title.toLowerCase().includes('management')) return '🎯';
+    return '📋';
+  };
 
-      <div className={cn("p-4 sm:p-6 xl:p-10", className)}>{children}</div>
+  return (
+    <div className="rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 dark:bg-gray-dark dark:border-gray-700">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-6 py-4 rounded-t-xl dark:border-gray-700">
+        <h2 className="font-bold text-gray-900 dark:text-white flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+            <span className="text-white text-lg">{getSectionIcon(title)}</span>
+          </div>
+          <span className="text-lg">{title}</span>
+        </h2>
+      </div>
+
+      <div className={cn("p-6", className)}>{children}</div>
     </div>
   );
 }

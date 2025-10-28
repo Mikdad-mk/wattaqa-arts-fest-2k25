@@ -3,12 +3,12 @@ import Image from "next/image";
 export function Hero() {
   return (
     <div className="h-screen relative overflow-hidden bg-white flex flex-col"
-         style={{
-           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
                             linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)`,
-           backgroundSize: '40px 40px'
-         }}>
-      
+        backgroundSize: '40px 40px'
+      }}>
+
       {/* Navigation */}
       <nav className="flex items-center justify-between px-8 py-6 max-w-6xl mx-auto w-full">
         <div className="flex items-center space-x-2">
@@ -17,7 +17,7 @@ export function Hero() {
           </div>
           <span className="font-bold text-xl">Festival 2K25</span>
         </div>
-        
+
         <div className="hidden md:flex items-center space-x-8 text-gray-500">
           <a href="#about" className="hover:text-gray-900 transition-colors">About</a>
           <a href="#lineup" className="hover:text-gray-900 transition-colors">Teams</a>
@@ -25,7 +25,7 @@ export function Hero() {
           <a href="#tickets" className="hover:text-gray-900 transition-colors">Register</a>
           <a href="#contact" className="hover:text-gray-900 transition-colors">Contact</a>
         </div>
-        
+
         <button className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors">
           Join Festival
         </button>
@@ -33,7 +33,7 @@ export function Hero() {
 
       {/* Hero Section - Full Screen Height */}
       <div className="flex-1 flex flex-col justify-center text-center px-8 max-w-6xl mx-auto w-full">
-        
+
         {/* User avatars and rating */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center mr-2">
@@ -53,8 +53,8 @@ export function Hero() {
         {/* Main heading */}
         <div className="relative mb-8">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 leading-tight">
-            Celebrate diversity<br />
-            with our festival
+            Celebrate<br />
+           WATTAQA 2K25 
           </h1>
         </div>
 
@@ -73,20 +73,20 @@ export function Hero() {
           <button className="text-gray-500 hover:text-gray-900 transition-colors text-lg">
             View Schedule
           </button>
-        </div>    
-    {/* Three Animated Image Containers */}
+        </div>
+        {/* Three Animated Image Containers */}
         <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-5xl mx-auto">
-          
+
           {/* Green container - Team Sumud */}
           <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-green-500/25 animate-fade-in-up group"
-               style={{ animationDelay: '0.2s' }}>
-            
+            style={{ animationDelay: '0.2s' }}>
+
             {/* Floating animation background */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-300/20 to-emerald-600/20 animate-pulse"></div>
-            
+
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
+
             {/* Content */}
             <div className="text-white text-center relative z-10 group-hover:text-white transition-colors duration-300">
               <div className="w-20 h-20 mx-auto mb-3 border-2 border-white/30 rounded-xl flex items-center justify-center group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
@@ -101,21 +101,21 @@ export function Hero() {
               <h3 className="text-lg font-bold mb-1">Team Sumud</h3>
               <p className="text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-300">Arts & Sports Excellence</p>
             </div>
-            
+
             {/* Animated border */}
             <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
           </div>
 
           {/* Blue container - Team Aqsa (taller) */}
           <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl w-full md:w-80 h-96 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 animate-fade-in-up group"
-               style={{ animationDelay: '0.4s' }}>
-            
+            style={{ animationDelay: '0.4s' }}>
+
             {/* Floating animation background */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-300/20 to-cyan-600/20 animate-pulse"></div>
-            
+
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
+
             {/* Content */}
             <div className="text-white text-center relative z-10 group-hover:text-white transition-colors duration-300">
               <div className="w-20 h-20 mx-auto mb-3 border-2 border-white/30 rounded-xl flex items-center justify-center group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
@@ -130,23 +130,23 @@ export function Hero() {
               <h3 className="text-lg font-bold mb-1">Team Aqsa</h3>
               <p className="text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-300">Creative & Athletic Champions</p>
             </div>
-            
+
             {/* Animated border */}
             <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
-            
+
             {/* Special glow effect for center box */}
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 animate-shimmer transition-opacity duration-500"></div>
-          </div> 
-         {/* Red container - Team Inthifada */}
+          </div>
+          {/* Red container - Team Inthifada */}
           <div className="bg-gradient-to-br from-red-400 to-rose-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 animate-fade-in-up group"
-               style={{ animationDelay: '0.6s' }}>
-            
+            style={{ animationDelay: '0.6s' }}>
+
             {/* Floating animation background */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-300/20 to-rose-600/20 animate-pulse"></div>
-            
+
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
+
             {/* Content */}
             <div className="text-white text-center relative z-10 group-hover:text-white transition-colors duration-300">
               <div className="w-20 h-20 mx-auto mb-3 border-2 border-white/30 rounded-xl flex items-center justify-center group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
@@ -161,11 +161,11 @@ export function Hero() {
               <h3 className="text-lg font-bold mb-1">Team Inthifada</h3>
               <p className="text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-300">Innovation & Competition</p>
             </div>
-            
+
             {/* Animated border */}
             <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
           </div>
-          
+
         </div>
       </div>
     </div>

@@ -5,100 +5,69 @@ export const NAV_DATA = [
     label: "FESTIVAL MANAGEMENT",
     items: [
       {
-        title: "Dashboard",
+        title: "Overview",
+        url: "/admin/dashboard",
         icon: Icons.HomeIcon,
-        items: [
-          {
-            title: "Overview",
-            url: "/admin/dashboard",
-          },
-        ],
-      },
-      {
-        title: "Event Calendar",
-        url: "/admin/calendar",
-        icon: Icons.Calendar,
         items: [],
       },
       {
-        title: "Profile",
-        url: "/admin/profile",
+        title: "Teams",
+        url: "/admin/teams",
         icon: Icons.User,
         items: [],
       },
       {
-        title: "Event Forms",
-        icon: Icons.Alphabet,
-        items: [
-          {
-            title: "Artist Registration",
-            url: "/admin/forms/form-elements",
-          },
-          {
-            title: "Vendor Applications",
-            url: "/admin/forms/form-layout",
-          },
-        ],
+        title: "Candidates",
+        url: "/admin/candidates",
+        icon: Icons.Authentication,
+        items: [],
       },
       {
-        title: "Data Tables",
-        url: "/admin/tables",
+        title: "Results",
+        url: "/admin/results",
+        icon: Icons.PieChart,
+        items: [],
+      },
+      {
+        title: "Rank & Top",
+        url: "/admin/rankings",
+        icon: Icons.FourCircle,
+        items: [],
+      },
+      {
+        title: "Search",
+        url: "/admin/search",
         icon: Icons.Table,
-        items: [
-          {
-            title: "Attendee Lists",
-            url: "/admin/tables",
-          },
-        ],
-      },
-      {
-        title: "Settings",
-        icon: Icons.Alphabet,
-        items: [
-          {
-            title: "Festival Settings",
-            url: "/admin/pages/settings",
-          },
-        ],
+        items: [],
       },
     ],
   },
   {
-    label: "ANALYTICS & TOOLS",
+    label: "CONTENT & SETTINGS",
     items: [
       {
-        title: "Analytics",
-        icon: Icons.PieChart,
-        items: [
-          {
-            title: "Ticket Sales",
-            url: "/admin/charts/basic-chart",
-          },
-        ],
+        title: "Gallery",
+        url: "/admin/gallery",
+        icon: Icons.Calendar,
+        items: [],
       },
       {
-        title: "Components",
-        icon: Icons.FourCircle,
-        items: [
-          {
-            title: "Alerts",
-            url: "/admin/ui-elements/alerts",
-          },
-          {
-            title: "Buttons",
-            url: "/admin/ui-elements/buttons",
-          },
-        ],
+        title: "Basic",
+        url: "/admin/basic",
+        icon: Icons.Alphabet,
+        items: [],
       },
       {
-        title: "Authentication",
+        title: "Print",
+        url: "/admin/print",
+        icon: Icons.Table,
+        items: [],
+      },
+      {
+        title: "Settings",
+        url: "/admin/settings",
         icon: Icons.Authentication,
-        items: [
-          {
-            title: "Admin Login",
-            url: "/admin/auth/sign-in",
-          },
-        ],
+        items: [],
       },
     ],
   },

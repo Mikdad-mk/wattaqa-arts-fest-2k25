@@ -51,7 +51,7 @@ export function ContactForm() {
 
         <TextAreaGroup label="Message" placeholder="Type your message" />
 
-        <button className="mt-6 flex w-full justify-center rounded-lg bg-primary p-[13px] font-medium text-white hover:bg-opacity-90">
+        <button className="mt-6 flex w-full justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 p-3 font-medium text-white transition-all duration-200 shadow-lg hover:shadow-xl">
           Send Message
         </button>
       </form>
