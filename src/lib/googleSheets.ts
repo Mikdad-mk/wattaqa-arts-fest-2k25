@@ -7,6 +7,14 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // Initialize Google Sheets API
 export async function getGoogleSheetsClient() {
   try {
+    // Check if all required environment variables are present
+    const requiredVars = ['GOOGLE_PROJECT_ID', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_CLIENT_EMAIL'];
+    for (const varName of requiredVars) {
+      if (!process.env[varName]) {
+        throw new Error(`Missing required environment variable: ${varName}`);
+      }
+    }
+
     // Use service account credentials from environment variables
     const credentials = {
       type: 'service_account',
@@ -31,6 +39,18 @@ export async function getGoogleSheetsClient() {
     return sheets;
   } catch (error) {
     console.error('Error initializing Google Sheets client:', error);
+    
+    // Provide helpful error messages
+    if (error instanceof Error) {
+      if (error.message.includes('unregistered callers')) {
+        throw new Error('Google Sheets API is not enabled. Please enable it in Google Cloud Console: https://console.cloud.google.com/apis/library/sheets.googleapis.com');
+      } else if (error.message.includes('permission') || error.message.includes('403')) {
+        throw new Error(`Permission denied. Please share your spreadsheet with: ${process.env.GOOGLE_CLIENT_EMAIL}`);
+      } else if (error.message.includes('not found') || error.message.includes('404')) {
+        throw new Error('Spreadsheet not found. Check the GOOGLE_SPREADSHEET_ID and make sure the spreadsheet is shared with the service account.');
+      }
+    }
+    
     throw error;
   }
 }
@@ -100,13 +120,13 @@ export function getSheetHeaders(type: 'teams' | 'candidates' | 'programmes' | 'r
   switch (type) {
     case 'teams':
       return ['ID', 'Name', 'Color', 'Description', 'Captain', 'Members', 'Points', 'Created At', 'Updated At'];
-    
+
     case 'candidates':
       return ['ID', 'Chest Number', 'Name', 'Team', 'Section', 'Points', 'Created At', 'Updated At'];
-    
+
     case 'programmes':
       return ['ID', 'Code', 'Name', 'Category', 'Section', 'Position Type', 'Status', 'Created At', 'Updated At'];
-    
+
     default:
       return [];
   }
