@@ -43,8 +43,10 @@ export function Navbar() {
                                 }`}>About</a>
                             <a href="#lineup" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
                                 }`}>Teams</a>
-                            <a href="#schedule" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
-                                }`}>Schedule</a>
+                            <Link href="/schedule" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
+                                }`}>Schedule</Link>
+                            <Link href="/programmes" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
+                                }`}>Programmes</Link>
                             <a href="#contact" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
                                 }`}>Contact</a>
                             <Link href="/login" className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105 ${isScrolled ? "px-4 py-2 text-sm font-semibold" : "px-3 py-1.5 text-xs font-medium"
@@ -87,11 +89,16 @@ export function Navbar() {
                         className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                         Teams
                     </a>
-                    <a href="#schedule"
+                    <Link href="/schedule"
                         onClick={() => setIsOpen(false)}
                         className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                         Schedule
-                    </a>
+                    </Link>
+                    <Link href="/programmes"
+                        onClick={() => setIsOpen(false)}
+                        className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">
+                        Programmes
+                    </Link>
                     <a href="#contact"
                         onClick={() => setIsOpen(false)}
                         className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">

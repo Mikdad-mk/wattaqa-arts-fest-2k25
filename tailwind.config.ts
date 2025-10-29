@@ -391,6 +391,7 @@ const config: Config = {
         line3: "line 7s infinite linear",
         "fade-in-up": "fadeInUp 0.6s ease-out forwards",
         shimmer: "shimmer 2s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

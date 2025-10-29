@@ -18,12 +18,14 @@ export interface Team {
 
 export interface Programme {
   _id?: ObjectId | string;
+  id?: string; // For backward compatibility
   code: string;
   name: string;
   category: 'arts' | 'sports';
   subcategory?: 'stage' | 'non-stage'; // For arts programmes
   section: 'senior' | 'junior' | 'sub-junior' | 'general';
   positionType: 'individual' | 'group' | 'general';
+  type?: 'individual' | 'group' | 'general'; // Alias for positionType
   requiredParticipants: number; // Number of participants required
   maxParticipants?: number; // Maximum participants allowed
   status: 'active' | 'inactive' | 'completed';
@@ -44,7 +46,9 @@ export interface Candidate {
 
 export interface Result {
   _id?: ObjectId | string;
-  programme: string;
+  id?: string; // For backward compatibility
+  programmeId: string;
+  programme?: string; // Keep for backward compatibility
   section: 'senior' | 'junior' | 'sub-junior' | 'general';
   positionType: 'individual' | 'group' | 'general';
   // For individual/group programmes (participant-based)

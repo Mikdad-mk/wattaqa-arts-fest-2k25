@@ -54,7 +54,7 @@ export function Hero() {
         <div className="relative mb-8">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 leading-tight">
             Celebrate<br />
-           WATTAQA 2K25 
+            WATTAQA 2K25
           </h1>
         </div>
 
@@ -70,6 +70,10 @@ export function Hero() {
             <span>Watch Highlights</span>
             <span className="text-yellow-400">⚡</span>
           </button>
+          <a href="/leaderboard" className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-4 rounded-full flex items-center gap-2 hover:from-purple-700 hover:to-purple-800 transition-all text-lg shadow-lg hover:shadow-xl transform hover:scale-105">
+            <span>🏆</span>
+            <span>View Leaderboard</span>
+          </a>
           <button className="text-gray-500 hover:text-gray-900 transition-colors text-lg">
             View Schedule
           </button>
