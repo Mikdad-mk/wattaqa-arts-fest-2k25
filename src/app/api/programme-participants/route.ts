@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ObjectId } from 'mongodb';
+import { syncProgrammeRegistrationToSheets } from '@/lib/googleSheets';
 
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
@@ -7,7 +8,7 @@ const client = new MongoClient(uri);
 export async function GET(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival');
+    const db = client.db('festival-management');
     const collection = db.collection('programme_participants');
 
     const { searchParams } = new URL(request.url);
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival');
+    const db = client.db('festival-management');
     const collection = db.collection('programme_participants');
 
     const body = await request.json();
@@ -66,10 +67,20 @@ export async function POST(request: NextRequest) {
 
     const result = await collection.insertOne(newParticipant);
     
-    return NextResponse.json({ 
+    const createdParticipant = {
       _id: result.insertedId,
-      ...newParticipant 
-    }, { status: 201 });
+      ...newParticipant
+    };
+    
+    // Sync to Google Sheets (don't block the response if it fails)
+    try {
+      await syncProgrammeRegistrationToSheets(createdParticipant);
+      console.log(`✅ Programme registration synced to Google Sheets for team ${teamCode}`);
+    } catch (error) {
+      console.error('⚠️ Failed to sync to Google Sheets, but registration was saved:', error);
+    }
+    
+    return NextResponse.json(createdParticipant, { status: 201 });
   } catch (error) {
     console.error('Error creating programme participant:', error);
     return NextResponse.json({ error: 'Failed to create programme participant' }, { status: 500 });
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival');
+    const db = client.db('festival-management');
     const collection = db.collection('programme_participants');
 
     const body = await request.json();
@@ -119,7 +130,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival');
+    const db = client.db('festival-management');
     const collection = db.collection('programme_participants');
 
     const { searchParams } = new URL(request.url);
