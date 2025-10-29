@@ -56,14 +56,31 @@ export default function TeamProgrammesPage() {
     }
   };
 
+  // Get team's available sections from candidates
+  const teamSections = [...new Set(candidates.map(c => c.section))];
+  
+  // Filter programmes that the team can participate in
+  const availableProgrammes = programmes.filter(p => {
+    // General programmes are available to all teams
+    if (p.section === 'general') return true;
+    // Section-specific programmes are only available if team has candidates in that section
+    return teamSections.includes(p.section);
+  });
+  
+  // Calculate correct statistics
+  const registeredProgrammeIds = participants.map(p => p.programmeId);
+  const availableProgrammesCount = availableProgrammes.length;
+  const registeredCount = participants.length;
+  const unregisteredCount = availableProgrammesCount - registeredCount;
+
   const groupedProgrammes = {
-    sports: programmes.filter(p => p.category === 'sports' && p.section !== 'general'),
-    sportsGeneral: programmes.filter(p => p.category === 'sports' && p.section === 'general'),
-    artsStage: programmes.filter(p => p.category === 'arts' && (p.subcategory === 'stage' || !p.subcategory) && p.section !== 'general'),
-    artsStageGeneral: programmes.filter(p => p.category === 'arts' && (p.subcategory === 'stage' || !p.subcategory) && p.section === 'general'),
-    artsNonStage: programmes.filter(p => p.category === 'arts' && p.subcategory === 'non-stage' && p.section !== 'general'),
-    artsNonStageGeneral: programmes.filter(p => p.category === 'arts' && p.subcategory === 'non-stage' && p.section === 'general'),
-    general: programmes.filter(p => p.category === 'general')
+    sports: availableProgrammes.filter(p => p.category === 'sports' && p.section !== 'general'),
+    sportsGeneral: availableProgrammes.filter(p => p.category === 'sports' && p.section === 'general'),
+    artsStage: availableProgrammes.filter(p => p.category === 'arts' && (p.subcategory === 'stage' || !p.subcategory) && p.section !== 'general'),
+    artsStageGeneral: availableProgrammes.filter(p => p.category === 'arts' && (p.subcategory === 'stage' || !p.subcategory) && p.section === 'general'),
+    artsNonStage: availableProgrammes.filter(p => p.category === 'arts' && p.subcategory === 'non-stage' && p.section !== 'general'),
+    artsNonStageGeneral: availableProgrammes.filter(p => p.category === 'arts' && p.subcategory === 'non-stage' && p.section === 'general'),
+    general: availableProgrammes.filter(p => p.category === 'general')
   };
 
   if (loading) {
@@ -90,7 +107,7 @@ export default function TeamProgrammesPage() {
         </div>
         <div className="text-right px-4 py-2 rounded-lg border shadow-sm text-white"
              style={{ backgroundColor: teamData?.color || '#3B82F6' }}>
-          <div className="text-2xl font-bold">{participants.length}</div>
+          <div className="text-2xl font-bold">{registeredCount}</div>
           <div className="text-sm opacity-90">Registered Programmes</div>
         </div>
       </div>
@@ -101,20 +118,20 @@ export default function TeamProgrammesPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{programmes.length}</div>
-            <div className="text-sm text-gray-600">Total Programmes</div>
+            <div className="text-2xl font-bold text-blue-600">{availableProgrammesCount}</div>
+            <div className="text-sm text-gray-600">Available Programmes</div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{participants.length}</div>
+            <div className="text-2xl font-bold text-green-600">{registeredCount}</div>
             <div className="text-sm text-gray-600">Registered</div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">{programmes.length - participants.length}</div>
-            <div className="text-sm text-gray-600">Available</div>
+            <div className="text-2xl font-bold text-orange-600">{unregisteredCount}</div>
+            <div className="text-sm text-gray-600">Not Registered</div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
@@ -329,6 +346,14 @@ function ProgrammeCard({
 
   const existingParticipant = participants.find(p => p.programmeId === programme._id?.toString());
   const isRegistered = !!existingParticipant;
+  
+  // Filter candidates based on programme section
+  const sectionCandidates = candidates.filter(candidate => {
+    // For general programmes, all team candidates are eligible
+    if (programme.section === 'general') return true;
+    // For section-specific programmes, only candidates from that section
+    return candidate.section === programme.section;
+  });
 
   const openModal = () => {
     setSelectedParticipants([]);
@@ -343,7 +368,7 @@ function ProgrammeCard({
   };
 
   // Filter candidates based on search term
-  const filteredCandidates = candidates.filter(candidate =>
+  const filteredCandidates = sectionCandidates.filter(candidate =>
     candidate.chestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
     candidate.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -431,6 +456,11 @@ function ProgrammeCard({
           <div className="flex items-center text-sm text-gray-600">
             <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
             <span className="capitalize font-medium">{programme.section} Section</span>
+            {programme.section !== 'general' && (
+              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                {sectionCandidates.length} eligible
+              </span>
+            )}
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
@@ -468,10 +498,10 @@ function ProgrammeCard({
         ) : (
           <button
             onClick={openModal}
-            disabled={candidates.length === 0}
+            disabled={sectionCandidates.length === 0}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-semibold py-3 rounded-lg transition-colors disabled:cursor-not-allowed"
           >
-            {candidates.length === 0 ? '❌ No Candidates Available' : '➕ Register for Programme'}
+            {sectionCandidates.length === 0 ? '❌ No Eligible Candidates' : '➕ Register for Programme'}
           </button>
         )}
       </div>
@@ -514,11 +544,16 @@ function ProgrammeCard({
                 </div>
               </div>
 
-              {candidates.length === 0 ? (
+              {sectionCandidates.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">😔</div>
-                  <h4 className="text-lg font-semibold text-gray-700 mb-2">No Candidates Available</h4>
-                  <p className="text-gray-500">Please add team candidates first before registering for programmes.</p>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">No Eligible Candidates</h4>
+                  <p className="text-gray-500">
+                    {programme.section === 'general' 
+                      ? 'No team candidates available for this programme.'
+                      : `No ${programme.section} section candidates available. This programme requires ${programme.section} section participants.`
+                    }
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -552,7 +587,7 @@ function ProgrammeCard({
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <p className="text-xs text-gray-500">
-                          Showing {filteredCandidates.length} of {candidates.length} candidates
+                          Showing {filteredCandidates.length} of {sectionCandidates.length} eligible candidates
                         </p>
                         <button
                           onClick={() => setSelectedParticipants([])}
@@ -671,7 +706,8 @@ function ProgrammeCard({
                       <p><strong>Required:</strong> {programme.requiredParticipants}</p>
                       <p><strong>Selection Valid:</strong> {selectedParticipants.length === programme.requiredParticipants ? '✅ YES' : '❌ NO'}</p>
                       <p><strong>Button Enabled:</strong> {selectedParticipants.length === programme.requiredParticipants && !isSubmitting ? '✅ YES' : '❌ NO'}</p>
-                      <p><strong>Candidates:</strong> {candidates.length} total, {filteredCandidates.length} filtered</p>
+                      <p><strong>Debug:</strong> Selected={selectedParticipants.length}, Required={programme.requiredParticipants}, Equal={selectedParticipants.length === programme.requiredParticipants}</p>
+                      <p><strong>Candidates:</strong> {sectionCandidates.length} eligible, {filteredCandidates.length} filtered</p>
                     </div>
                     <div className="mt-2 flex gap-2">
                       <button
@@ -833,7 +869,7 @@ function ProgrammeCard({
                     
                     handleRegister();
                   }}
-                  disabled={selectedParticipants.length !== programme.requiredParticipants || isSubmitting}
+                  disabled={!(selectedParticipants.length === programme.requiredParticipants && !isSubmitting)}
                   className={`flex-1 px-6 py-3 font-bold text-lg rounded-lg transition-all duration-200 border-2 ${
                     selectedParticipants.length === programme.requiredParticipants && !isSubmitting
                       ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 border-green-600 hover:border-green-700'
