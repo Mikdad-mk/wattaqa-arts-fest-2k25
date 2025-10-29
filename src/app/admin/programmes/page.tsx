@@ -3,19 +3,25 @@
 import { useState, useEffect } from 'react';
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
-import { Programme } from '@/types';
+import { Programme, ProgrammeParticipant, Team } from '@/types';
 
 export default function ProgrammesPage() {
   const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [participants, setParticipants] = useState<ProgrammeParticipant[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'manage' | 'registrations'>('manage');
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    category: '' as 'arts' | 'sports' | '',
+    category: '' as 'arts' | 'sports' | 'general' | '',
+    subcategory: '' as 'stage' | 'non-stage' | '',
     section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
-    positionType: '' as 'individual' | 'group' | 'general' | ''
+    positionType: '' as 'individual' | 'group' | 'general' | '',
+    requiredParticipants: 1,
+    maxParticipants: ''
   });
 
   // Filter out blank/empty programmes
@@ -34,17 +40,28 @@ export default function ProgrammesPage() {
     );
   };
 
-  // Fetch programmes from API
-  const fetchProgrammes = async () => {
+  // Fetch all data from APIs
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/programmes');
-      const data = await response.json();
+      const [programmesRes, participantsRes, teamsRes] = await Promise.all([
+        fetch('/api/programmes'),
+        fetch('/api/programme-participants'),
+        fetch('/api/teams')
+      ]);
+      
+      const [programmesData, participantsData, teamsData] = await Promise.all([
+        programmesRes.json(),
+        participantsRes.json(),
+        teamsRes.json()
+      ]);
       
       // Filter out blank/empty programmes
-      const validProgrammes = filterValidProgrammes(data);
+      const validProgrammes = filterValidProgrammes(programmesData);
       
       setProgrammes(validProgrammes);
+      setParticipants(participantsData);
+      setTeams(teamsData);
     } catch (error) {
       console.error('Error fetching programmes:', error);
     } finally {
@@ -53,15 +70,20 @@ export default function ProgrammesPage() {
   };
 
   useEffect(() => {
-    fetchProgrammes();
+    fetchData();
   }, []);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.code || !formData.name || !formData.category || !formData.section || !formData.positionType) {
-      alert('Please fill in all fields');
+    if (!formData.code || !formData.name || !formData.category || !formData.section || !formData.positionType || !formData.requiredParticipants) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (formData.category === 'arts' && !formData.subcategory) {
+      alert('Please select subcategory for arts programmes');
       return;
     }
 
@@ -83,13 +105,16 @@ export default function ProgrammesPage() {
         setFormData({
           code: '',
           name: '',
-          category: '' as 'arts' | 'sports' | '',
+          category: '' as 'arts' | 'sports' | 'general' | '',
+          subcategory: '' as 'stage' | 'non-stage' | '',
           section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
-          positionType: '' as 'individual' | 'group' | 'general' | ''
+          positionType: '' as 'individual' | 'group' | 'general' | '',
+          requiredParticipants: 1,
+          maxParticipants: ''
         });
         
-        // Refresh programmes list
-        await fetchProgrammes();
+        // Refresh data
+        await fetchData();
         alert('Programme added successfully!');
       } else {
         alert('Error adding programme');
@@ -136,7 +161,7 @@ export default function ProgrammesPage() {
       });
 
       if (response.ok) {
-        await fetchProgrammes(); // Refresh the list
+        await fetchData(); // Refresh the list
         alert('Programme deleted successfully!');
       } else {
         const error = await response.json();
@@ -149,13 +174,56 @@ export default function ProgrammesPage() {
       setDeleting(null);
     }
   };
+  // Get programme registrations with team info
+  const getProgrammeRegistrations = () => {
+    return programmes.map(programme => {
+      const programmeParticipants = participants.filter(p => p.programmeId === programme._id?.toString());
+      return {
+        ...programme,
+        registrations: programmeParticipants.map(p => ({
+          ...p,
+          teamInfo: teams.find(t => t.code === p.teamCode)
+        }))
+      };
+    });
+  };
+
+  const programmeRegistrations = getProgrammeRegistrations();
+  const totalRegistrations = participants.length;
+
   return (
     <>
       <Breadcrumb pageName="Programmes" />
 
       <div className="space-y-6">
-        {/* Add New Programme */}
-        <ShowcaseSection title="Add New Programme">
+        {/* Tab Navigation */}
+        <div className="flex space-x-1">
+          <button
+            onClick={() => setActiveTab('manage')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'manage'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            📝 Manage Programmes ({programmes.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('registrations')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'registrations'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            👥 View Registrations ({totalRegistrations})
+          </button>
+        </div>
+        {/* Manage Programmes Tab */}
+        {activeTab === 'manage' && (
+          <>
+            {/* Add New Programme */}
+            <ShowcaseSection title="Add New Programme">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -200,11 +268,33 @@ export default function ProgrammesPage() {
                   <option value="">Select category</option>
                   <option value="arts">Arts</option>
                   <option value="sports">Sports</option>
+                  <option value="general">General</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {formData.category === 'arts' && (
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arts Subcategory
+                  </label>
+                  <select 
+                    name="subcategory"
+                    value={formData.subcategory}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                    required
+                  >
+                    <option value="">Select subcategory</option>
+                    <option value="stage">Stage</option>
+                    <option value="non-stage">Non-Stage</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Section
@@ -239,6 +329,22 @@ export default function ProgrammesPage() {
                   <option value="group">Group</option>
                   <option value="general">General</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Required Participants
+                </label>
+                <input
+                  type="number"
+                  name="requiredParticipants"
+                  value={formData.requiredParticipants}
+                  onChange={handleInputChange}
+                  min="1"
+                  max="20"
+                  placeholder="Number of participants"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                  required
+                />
               </div>
             </div>
 
@@ -275,6 +381,7 @@ export default function ProgrammesPage() {
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Category</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Section</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Position</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-700">Participants</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Status</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Actions</th>
                   </tr>
@@ -304,6 +411,11 @@ export default function ProgrammesPage() {
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">
                           {programme.positionType ? programme.positionType.charAt(0).toUpperCase() + programme.positionType.slice(1) : 'Unknown'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          {programme.requiredParticipants || 1} required
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -365,6 +477,139 @@ export default function ProgrammesPage() {
             </div>
           </div>
         </ShowcaseSection>
+          </>
+        )}
+
+        {/* Registrations Tab */}
+        {activeTab === 'registrations' && (
+          <>
+            {/* Registration Statistics */}
+            <ShowcaseSection title="Registration Overview">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div className="text-center p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="text-3xl mb-3">📋</div>
+                  <h3 className="font-semibold text-blue-900 mb-2">Total Registrations</h3>
+                  <p className="text-2xl font-bold text-blue-900">{totalRegistrations}</p>
+                  <p className="text-sm text-blue-600">Across all programmes</p>
+                </div>
+                
+                <div className="text-center p-6 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="text-3xl mb-3">🎯</div>
+                  <h3 className="font-semibold text-green-900 mb-2">Active Programmes</h3>
+                  <p className="text-2xl font-bold text-green-900">{programmeRegistrations.filter(p => p.registrations.length > 0).length}</p>
+                  <p className="text-sm text-green-600">With registrations</p>
+                </div>
+                
+                <div className="text-center p-6 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="text-3xl mb-3">👥</div>
+                  <h3 className="font-semibold text-purple-900 mb-2">Teams Participating</h3>
+                  <p className="text-2xl font-bold text-purple-900">{new Set(participants.map(p => p.teamCode)).size}</p>
+                  <p className="text-sm text-purple-600">Unique teams</p>
+                </div>
+                
+                <div className="text-center p-6 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="text-3xl mb-3">⭐</div>
+                  <h3 className="font-semibold text-orange-900 mb-2">Avg per Programme</h3>
+                  <p className="text-2xl font-bold text-orange-900">
+                    {programmes.length > 0 ? (totalRegistrations / programmes.length).toFixed(1) : '0'}
+                  </p>
+                  <p className="text-sm text-orange-600">Registrations</p>
+                </div>
+              </div>
+            </ShowcaseSection>
+
+            {/* Programme Registrations */}
+            <ShowcaseSection title="Programme Registrations">
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-gray-600">Loading registrations...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {programmeRegistrations.map((programme) => (
+                    <div key={programme._id?.toString()} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{programme.name}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                              <span className="font-mono bg-gray-200 px-2 py-1 rounded">{programme.code}</span>
+                              <span className="capitalize">{programme.section} • {programme.positionType}</span>
+                              <span>Required: {programme.requiredParticipants} participants</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-blue-600">{programme.registrations.length}</div>
+                            <div className="text-sm text-gray-500">Team{programme.registrations.length !== 1 ? 's' : ''} Registered</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {programme.registrations.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500">
+                          <div className="text-4xl mb-2">📝</div>
+                          <p>No teams registered for this programme yet</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-200">
+                          {programme.registrations.map((registration) => (
+                            <div key={registration._id?.toString()} className="p-6">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <div 
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
+                                    style={{ backgroundColor: registration.teamInfo?.color || '#6B7280' }}
+                                  >
+                                    {registration.teamCode}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">{registration.teamInfo?.name || registration.teamCode}</h4>
+                                    <p className="text-sm text-gray-600">{registration.teamInfo?.description}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {registration.participants.length} Participant{registration.participants.length !== 1 ? 's' : ''}
+                                  </div>
+                                  <div className="text-xs text-gray-500 capitalize">{registration.status}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="mt-4">
+                                <h5 className="text-sm font-medium text-gray-700 mb-2">Participants:</h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {registration.participants.map((chestNumber, index) => (
+                                    <span 
+                                      key={index}
+                                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200"
+                                    >
+                                      {chestNumber}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {programmeRegistrations.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="text-gray-400 text-6xl mb-4">📋</div>
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">No Programmes Available</h3>
+                      <p className="text-gray-500">Add programmes first to see registrations.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </ShowcaseSection>
+          </>
+        )}
       </div>
     </>
   );

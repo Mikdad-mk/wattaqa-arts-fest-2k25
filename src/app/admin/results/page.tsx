@@ -3,60 +3,60 @@
 import { useState, useEffect } from 'react';
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
-import { Result, Programme, Candidate } from '@/types';
+import { Result, Programme, Candidate, ProgrammeParticipant } from '@/types';
 
 export default function ResultsPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [participants, setParticipants] = useState<ProgrammeParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  
+  // Enhanced form state
+  const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string>('');
+  const [filteredParticipants, setFilteredParticipants] = useState<any[]>([]);
+  const [showParticipants, setShowParticipants] = useState(false);
+  
   const [formData, setFormData] = useState({
     programme: '',
     section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
     positionType: '' as 'individual' | 'group' | 'general' | '',
-    firstPlace: [{ chestNumber: '', grade: undefined }],
-    secondPlace: [{ chestNumber: '', grade: undefined }],
-    thirdPlace: [{ chestNumber: '', grade: undefined }],
+    firstPlace: [] as string[],
+    secondPlace: [] as string[],
+    thirdPlace: [] as string[],
+    participationGrades: [] as { chestNumber: string; grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'; points: number }[],
     firstPoints: 10,
     secondPoints: 7,
     thirdPoints: 5,
+    participationPoints: 2,
     notes: ''
   });
 
-  // Filter out blank/empty results
-  const filterValidResults = (results: Result[]) => {
-    return results.filter(result => 
-      result.programme && 
-      result.programme.trim() !== '' &&
-      result.section && 
-      result.section.trim() !== ''
-    );
-  };
-
-  // Fetch results, programmes, and candidates from API
+  // Fetch data from APIs
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [resultsRes, programmesRes, candidatesRes] = await Promise.all([
+      const [resultsRes, programmesRes, candidatesRes, participantsRes] = await Promise.all([
         fetch('/api/results'),
         fetch('/api/programmes'),
-        fetch('/api/candidates')
+        fetch('/api/candidates'),
+        fetch('/api/programme-participants')
       ]);
       
-      const [resultsData, programmesData, candidatesData] = await Promise.all([
+      const [resultsData, programmesData, candidatesData, participantsData] = await Promise.all([
         resultsRes.json(),
         programmesRes.json(),
-        candidatesRes.json()
+        candidatesRes.json(),
+        participantsRes.json()
       ]);
       
-      // Filter out blank/empty results
-      const validResults = filterValidResults(resultsData);
-      
-      setResults(validResults);
+      setResults(resultsData);
       setProgrammes(programmesData);
       setCandidates(candidatesData);
+      setParticipants(participantsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -68,6 +68,92 @@ export default function ResultsPage() {
     fetchData();
   }, []);
 
+  // Handle programme selection
+  const handleProgrammeSelection = (programmeId: string) => {
+    const programme = programmes.find(p => p._id?.toString() === programmeId);
+    setSelectedProgramme(programme || null);
+    setSelectedSection('');
+    setFilteredParticipants([]);
+    setShowParticipants(false);
+    
+    if (programme) {
+      setFormData(prev => ({
+        ...prev,
+        programme: `${programme.code} - ${programme.name}`,
+        positionType: programme.positionType || 'individual'
+      }));
+    }
+  };
+
+  // Handle section selection
+  const handleSectionSelection = (section: string) => {
+    setSelectedSection(section);
+    setFormData(prev => ({ ...prev, section: section as any }));
+    
+    if (selectedProgramme && section) {
+      // Filter participants for this programme and section
+      const programmeParticipants = participants.filter(p => 
+        p.programmeId === selectedProgramme._id?.toString()
+      );
+      
+      // Get detailed participant info
+      const detailedParticipants = programmeParticipants.flatMap(pp => 
+        pp.participants.map(chestNumber => {
+          const candidate = candidates.find(c => c.chestNumber === chestNumber);
+          return {
+            chestNumber,
+            candidate,
+            teamCode: pp.teamCode,
+            programmeName: pp.programmeName,
+            programmeCode: pp.programmeCode
+          };
+        })
+      ).filter(p => p.candidate && (section === 'general' || p.candidate.section === section));
+      
+      setFilteredParticipants(detailedParticipants);
+      setShowParticipants(true);
+    }
+  };
+
+  // Check if participant is assigned
+  const isParticipantAssigned = (chestNumber: string) => {
+    return [
+      ...formData.firstPlace,
+      ...formData.secondPlace,
+      ...formData.thirdPlace,
+      ...formData.participationGrades.map(pg => pg.chestNumber)
+    ].includes(chestNumber);
+  };
+
+  // Add/remove from position
+  const togglePosition = (position: 'firstPlace' | 'secondPlace' | 'thirdPlace', chestNumber: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [position]: prev[position].includes(chestNumber)
+        ? prev[position].filter(cn => cn !== chestNumber)
+        : [...prev[position], chestNumber]
+    }));
+  };
+
+  // Add participation grade
+  const addParticipationGrade = (chestNumber: string, grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F', points: number) => {
+    setFormData(prev => ({
+      ...prev,
+      participationGrades: [
+        ...prev.participationGrades.filter(pg => pg.chestNumber !== chestNumber),
+        { chestNumber, grade, points }
+      ]
+    }));
+  };
+
+  // Remove participation grade
+  const removeParticipationGrade = (chestNumber: string) => {
+    setFormData(prev => ({
+      ...prev,
+      participationGrades: prev.participationGrades.filter(pg => pg.chestNumber !== chestNumber)
+    }));
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,21 +163,19 @@ export default function ResultsPage() {
       return;
     }
 
-    // Filter out empty winners (only chest number is required)
     const submitData = {
       ...formData,
-      firstPlace: formData.firstPlace.filter(winner => winner.chestNumber.trim() !== ''),
-      secondPlace: formData.secondPlace.filter(winner => winner.chestNumber.trim() !== ''),
-      thirdPlace: formData.thirdPlace.filter(winner => winner.chestNumber.trim() !== '')
+      firstPlace: formData.firstPlace.map(cn => ({ chestNumber: cn })),
+      secondPlace: formData.secondPlace.map(cn => ({ chestNumber: cn })),
+      thirdPlace: formData.thirdPlace.map(cn => ({ chestNumber: cn })),
+      participationGrades: formData.participationGrades
     };
 
     try {
       setSubmitting(true);
       const response = await fetch('/api/results', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       });
 
@@ -99,18 +183,23 @@ export default function ResultsPage() {
         // Reset form
         setFormData({
           programme: '',
-          section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
-          positionType: '' as 'individual' | 'group' | 'general' | '',
-          firstPlace: [{ chestNumber: '', grade: undefined }],
-          secondPlace: [{ chestNumber: '', grade: undefined }],
-          thirdPlace: [{ chestNumber: '', grade: undefined }],
+          section: '' as any,
+          positionType: '' as any,
+          firstPlace: [],
+          secondPlace: [],
+          thirdPlace: [],
+          participationGrades: [],
           firstPoints: 10,
           secondPoints: 7,
           thirdPoints: 5,
+          participationPoints: 2,
           notes: ''
         });
+        setSelectedProgramme(null);
+        setSelectedSection('');
+        setFilteredParticipants([]);
+        setShowParticipants(false);
         
-        // Refresh results list
         await fetchData();
         alert('Result added successfully!');
       } else {
@@ -125,73 +214,9 @@ export default function ResultsPage() {
     }
   };
 
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name.includes('Points') ? parseInt(value) || 0 : value
-    }));
-  };
-
-  // Handle winner chest number changes
-  const handleWinnerChestNumberChange = (position: 'firstPlace' | 'secondPlace' | 'thirdPlace', index: number, chestNumber: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [position]: prev[position].map((winner, i) => 
-        i === index ? { ...winner, chestNumber } : winner
-      )
-    }));
-  };
-
-  // Handle winner grade changes
-  const handleWinnerGradeChange = (position: 'firstPlace' | 'secondPlace' | 'thirdPlace', index: number, grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | '') => {
-    setFormData(prev => ({
-      ...prev,
-      [position]: prev[position].map((winner, i) => 
-        i === index ? { ...winner, grade: grade === '' ? undefined : grade } : winner
-      )
-    }));
-  };
-
-  // Add winner field
-  const addWinner = (position: 'firstPlace' | 'secondPlace' | 'thirdPlace') => {
-    setFormData(prev => ({
-      ...prev,
-      [position]: [...prev[position], { chestNumber: '', grade: undefined }]
-    }));
-  };
-
-  // Remove winner field
-  const removeWinner = (position: 'firstPlace' | 'secondPlace' | 'thirdPlace', index: number) => {
-    if (formData[position].length > 1) {
-      setFormData(prev => ({
-        ...prev,
-        [position]: prev[position].filter((_, i) => i !== index)
-      }));
-    }
-  };
-
-  // Get candidates filtered by grade
-  const getCandidatesByGrade = (grade: string) => {
-    if (!grade) return [];
-    return candidates.filter(candidate => candidate.grade === grade);
-  };
-
-  // Validate chest number for specific grade (grade is optional)
-  const isValidChestNumber = (chestNumber: string, grade?: string) => {
-    if (!chestNumber.trim()) return true; // Allow empty chest numbers
-    if (!grade) {
-      // If no grade specified, check if chest number exists in any grade
-      return candidates.some(candidate => candidate.chestNumber === chestNumber.trim());
-    }
-    // If grade specified, check if chest number exists in that grade
-    return getCandidatesByGrade(grade).some(candidate => candidate.chestNumber === chestNumber.trim());
-  };
-
-  // Handle delete result
+  // Handle delete
   const handleDelete = async (resultId: string, programmeName: string) => {
-    if (!confirm(`Are you sure you want to delete the result for "${programmeName}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete the result for "${programmeName}"?`)) {
       return;
     }
 
@@ -202,11 +227,11 @@ export default function ResultsPage() {
       });
 
       if (response.ok) {
-        await fetchData(); // Refresh the list
+        await fetchData();
         alert('Result deleted successfully!');
       } else {
         const error = await response.json();
-        alert(`Error deleting result: ${error.error || 'Unknown error'}`);
+        alert(`Error: ${error.error}`);
       }
     } catch (error) {
       console.error('Error deleting result:', error);
@@ -235,36 +260,45 @@ export default function ResultsPage() {
         {/* Add New Result */}
         <ShowcaseSection title="Add New Result">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Programme and Section Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Programme *
                 </label>
                 <select
-                  name="programme"
-                  value={formData.programme}
-                  onChange={handleInputChange}
+                  value={selectedProgramme?._id?.toString() || ''}
+                  onChange={(e) => handleProgrammeSelection(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                   required
                 >
                   <option value="">Select programme</option>
                   {programmes.map((programme) => (
-                    <option key={programme._id?.toString()} value={`${programme.code} - ${programme.name}`}>
-                      {programme.code} - {programme.name}
+                    <option key={programme._id?.toString()} value={programme._id?.toString()}>
+                      {programme.code} - {programme.name} ({programme.category})
                     </option>
                   ))}
                 </select>
+                {selectedProgramme && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-sm text-blue-800">
+                      <p><strong>Category:</strong> {selectedProgramme.category}</p>
+                      <p><strong>Position Type:</strong> {selectedProgramme.positionType}</p>
+                      <p><strong>Required Participants:</strong> {selectedProgramme.requiredParticipants}</p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Section *
                 </label>
                 <select
-                  name="section"
-                  value={formData.section}
-                  onChange={handleInputChange}
+                  value={selectedSection}
+                  onChange={(e) => handleSectionSelection(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                   required
+                  disabled={!selectedProgramme}
                 >
                   <option value="">Select section</option>
                   <option value="senior">Senior</option>
@@ -272,229 +306,158 @@ export default function ResultsPage() {
                   <option value="sub-junior">Sub Junior</option>
                   <option value="general">General</option>
                 </select>
+                {selectedSection && (
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-sm text-green-800">
+                      <p><strong>Selected Section:</strong> {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1).replace('-', ' ')}</p>
+                      {showParticipants && (
+                        <p><strong>Registered Participants:</strong> {filteredParticipants.length}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Position Type *
-                </label>
-                <select
-                  name="positionType"
-                  value={formData.positionType}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
-                  required
-                >
-                  <option value="">Select position type</option>
-                  <option value="individual">Individual</option>
-                  <option value="group">Group</option>
-                  <option value="general">General</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Winners */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* First Place Winners */}
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    🥇 First Place Winners
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => addWinner('firstPlace')}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                  >
-                    + Add More
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {formData.firstPlace.map((winner, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <select
-                          value={winner.grade || ''}
-                          onChange={(e) => handleWinnerGradeChange('firstPlace', index, e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | '')}
-                          className="w-20 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 text-sm"
-                        >
-                          <option value="">Any</option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                          <option value="F">F</option>
-                        </select>
-                        <input
-                          type="text"
-                          value={winner.chestNumber}
-                          onChange={(e) => handleWinnerChestNumberChange('firstPlace', index, e.target.value)}
-                          placeholder="Chest number"
-                          className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 ${
-                            winner.chestNumber && !isValidChestNumber(winner.chestNumber, winner.grade) ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                          }`}
-                        />
-                        {formData.firstPlace.length > 1 && (
+            {/* Registered Participants Display */}
+            {showParticipants && filteredParticipants.length > 0 && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">👥</span>
+                  Registered Participants ({filteredParticipants.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredParticipants.map((participant, index) => {
+                    const isAssigned = isParticipantAssigned(participant.chestNumber);
+                    const isFirst = formData.firstPlace.includes(participant.chestNumber);
+                    const isSecond = formData.secondPlace.includes(participant.chestNumber);
+                    const isThird = formData.thirdPlace.includes(participant.chestNumber);
+                    const participationGrade = formData.participationGrades.find(pg => pg.chestNumber === participant.chestNumber);
+                    
+                    return (
+                      <div 
+                        key={index}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          isAssigned
+                            ? 'border-green-300 bg-green-50'
+                            : 'border-gray-200 bg-white hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <div className="font-bold text-gray-900 font-mono">
+                              {participant.chestNumber}
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {participant.candidate?.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {participant.teamCode} • {participant.candidate?.section} section
+                            </div>
+                          </div>
+                          {isAssigned && (
+                            <div className="text-green-600 font-bold text-sm">
+                              ✅
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Position Buttons */}
+                        <div className="flex flex-wrap gap-1 mb-2">
                           <button
                             type="button"
-                            onClick={() => removeWinner('firstPlace', index)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded text-sm transition-colors"
+                            onClick={() => togglePosition('firstPlace', participant.chestNumber)}
+                            className={`px-2 py-1 text-xs rounded ${
+                              isFirst ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            }`}
                           >
-                            ×
+                            🥇 1st
                           </button>
-                        )}
-                      </div>
-                      {winner.grade && (
-                        <div className="text-xs text-gray-600">
-                          Available: {getCandidatesByGrade(winner.grade).map(c => c.chestNumber).join(', ') || 'None'}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Second Place Winners */}
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    🥈 Second Place Winners
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => addWinner('secondPlace')}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                  >
-                    + Add More
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {formData.secondPlace.map((winner, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <select
-                          value={winner.grade}
-                          onChange={(e) => handleWinnerGradeChange('secondPlace', index, e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F')}
-                          className="w-20 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 text-sm"
-                          required
-                        >
-                          <option value="">Grade</option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                          <option value="F">F</option>
-                        </select>
-                        <input
-                          type="text"
-                          value={winner.chestNumber}
-                          onChange={(e) => handleWinnerChestNumberChange('secondPlace', index, e.target.value)}
-                          placeholder="Chest number"
-                          className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 ${
-                            winner.chestNumber && !isValidChestNumber(winner.chestNumber, winner.grade) ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                          }`}
-                          disabled={!winner.grade}
-                        />
-                        {formData.secondPlace.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => removeWinner('secondPlace', index)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded text-sm transition-colors"
+                            onClick={() => togglePosition('secondPlace', participant.chestNumber)}
+                            className={`px-2 py-1 text-xs rounded ${
+                              isSecond ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
                           >
-                            ×
+                            🥈 2nd
                           </button>
-                        )}
-                      </div>
-                      {winner.grade && (
-                        <div className="text-xs text-gray-600">
-                          Available: {getCandidatesByGrade(winner.grade).map(c => c.chestNumber).join(', ') || 'None'}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Third Place Winners */}
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    🥉 Third Place Winners
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => addWinner('thirdPlace')}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                  >
-                    + Add More
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {formData.thirdPlace.map((winner, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <select
-                          value={winner.grade}
-                          onChange={(e) => handleWinnerGradeChange('thirdPlace', index, e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F')}
-                          className="w-20 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 text-sm"
-                          required
-                        >
-                          <option value="">Grade</option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                          <option value="F">F</option>
-                        </select>
-                        <input
-                          type="text"
-                          value={winner.chestNumber}
-                          onChange={(e) => handleWinnerChestNumberChange('thirdPlace', index, e.target.value)}
-                          placeholder="Chest number"
-                          className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 ${
-                            winner.chestNumber && !isValidChestNumber(winner.chestNumber, winner.grade) ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                          }`}
-                          disabled={!winner.grade}
-                        />
-                        {formData.thirdPlace.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => removeWinner('thirdPlace', index)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded text-sm transition-colors"
+                            onClick={() => togglePosition('thirdPlace', participant.chestNumber)}
+                            className={`px-2 py-1 text-xs rounded ${
+                              isThird ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                            }`}
                           >
-                            ×
+                            🥉 3rd
                           </button>
-                        )}
-                      </div>
-                      {winner.grade && (
-                        <div className="text-xs text-gray-600">
-                          Available: {getCandidatesByGrade(winner.grade).map(c => c.chestNumber).join(', ') || 'None'}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        
+                        {/* Participation Grade */}
+                        <div className="flex items-center space-x-1">
+                          <select
+                            value={participationGrade?.grade || ''}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                addParticipationGrade(
+                                  participant.chestNumber, 
+                                  e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F',
+                                  formData.participationPoints
+                                );
+                              } else {
+                                removeParticipationGrade(participant.chestNumber);
+                              }
+                            }}
+                            className="text-xs px-1 py-1 border border-gray-300 rounded bg-white"
+                          >
+                            <option value="">Grade</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                          </select>
+                          {participationGrade && (
+                            <input
+                              type="number"
+                              value={participationGrade.points}
+                              onChange={(e) => addParticipationGrade(
+                                participant.chestNumber, 
+                                participationGrade.grade, 
+                                parseInt(e.target.value) || 0
+                              )}
+                              className="text-xs px-1 py-1 border border-gray-300 rounded bg-white w-12"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            )}
 
+            {showParticipants && filteredParticipants.length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <div className="text-yellow-600 text-4xl mb-2">⚠️</div>
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Participants Found</h3>
+                <p className="text-yellow-700">
+                  No teams have registered for this programme in the selected section.
+                </p>
+              </div>
+            )}
 
-
-            {/* Points */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Points Configuration */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Points (1st Place)
                 </label>
                 <input
                   type="number"
-                  name="firstPoints"
                   value={formData.firstPoints}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, firstPoints: parseInt(e.target.value) || 0 }))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
@@ -504,9 +467,8 @@ export default function ResultsPage() {
                 </label>
                 <input
                   type="number"
-                  name="secondPoints"
                   value={formData.secondPoints}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, secondPoints: parseInt(e.target.value) || 0 }))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
                 />
               </div>
@@ -516,22 +478,32 @@ export default function ResultsPage() {
                 </label>
                 <input
                   type="number"
-                  name="thirdPoints"
                   value={formData.thirdPoints}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData(prev => ({ ...prev, thirdPoints: parseInt(e.target.value) || 0 }))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Points (Participation)
+                </label>
+                <input
+                  type="number"
+                  value={formData.participationPoints}
+                  onChange={(e) => setFormData(prev => ({ ...prev, participationPoints: parseInt(e.target.value) || 0 }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-700"
                 />
               </div>
             </div>
 
+            {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Notes
               </label>
               <textarea
-                name="notes"
                 value={formData.notes}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 rows={3}
                 placeholder="Enter any additional notes"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
@@ -540,7 +512,7 @@ export default function ResultsPage() {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !showParticipants}
               className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50"
             >
               {submitting ? 'Adding Result...' : 'Add Result'}
@@ -550,14 +522,7 @@ export default function ResultsPage() {
 
         {/* Results List */}
         <ShowcaseSection title="Results List">
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-gray-600">Loading results...</p>
-              </div>
-            </div>
-          ) : results.length === 0 ? (
+          {results.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-600">No results found. Add your first result above!</p>
             </div>
@@ -568,10 +533,10 @@ export default function ResultsPage() {
                   <tr className="border-b-2 border-gray-200">
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Programme</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Section</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Position Type</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">🥇 First</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">🥈 Second</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">🥉 Third</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-700">🎖️ Participation</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Actions</th>
                   </tr>
                 </thead>
@@ -585,20 +550,12 @@ export default function ResultsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
-                          {result.positionType.charAt(0).toUpperCase() + result.positionType.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
                         <div className="text-sm">
                           {result.firstPlace && result.firstPlace.length > 0 ? (
                             <div>
                               {result.firstPlace.map((winner, index) => (
-                                <div key={index} className="flex items-center space-x-2 mb-1">
+                                <div key={index} className="mb-1">
                                   <span className="font-medium text-gray-900">{winner.chestNumber}</span>
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                    {winner.grade}
-                                  </span>
                                 </div>
                               ))}
                               <p className="text-gray-500">{result.firstPoints} pts each</p>
@@ -613,11 +570,8 @@ export default function ResultsPage() {
                           {result.secondPlace && result.secondPlace.length > 0 ? (
                             <div>
                               {result.secondPlace.map((winner, index) => (
-                                <div key={index} className="flex items-center space-x-2 mb-1">
+                                <div key={index} className="mb-1">
                                   <span className="font-medium text-gray-900">{winner.chestNumber}</span>
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                    {winner.grade}
-                                  </span>
                                 </div>
                               ))}
                               <p className="text-gray-500">{result.secondPoints} pts each</p>
@@ -632,14 +586,30 @@ export default function ResultsPage() {
                           {result.thirdPlace && result.thirdPlace.length > 0 ? (
                             <div>
                               {result.thirdPlace.map((winner, index) => (
-                                <div key={index} className="flex items-center space-x-2 mb-1">
+                                <div key={index} className="mb-1">
                                   <span className="font-medium text-gray-900">{winner.chestNumber}</span>
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                    {winner.grade}
-                                  </span>
                                 </div>
                               ))}
                               <p className="text-gray-500">{result.thirdPoints} pts each</p>
+                            </div>
+                          ) : (
+                            <p className="text-gray-400">-</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-sm">
+                          {result.participationGrades && result.participationGrades.length > 0 ? (
+                            <div>
+                              {result.participationGrades.map((pg, index) => (
+                                <div key={index} className="flex items-center space-x-2 mb-1">
+                                  <span className="font-medium text-gray-900">{pg.chestNumber}</span>
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                                    {pg.grade}
+                                  </span>
+                                  <span className="text-xs text-gray-500">({pg.points} pts)</span>
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <p className="text-gray-400">-</p>

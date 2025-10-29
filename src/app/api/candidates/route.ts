@@ -4,18 +4,28 @@ import { Candidate } from '@/types';
 import { ObjectId } from 'mongodb';
 
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const team = searchParams.get('team');
+    
     const db = await getDatabase();
     const collection = db.collection<Candidate>('candidates');
     
-    // Filter out blank/empty candidates using MongoDB query
-    const candidates = await collection.find({
+    // Build query with team filter if provided
+    let query: any = {
       name: { $exists: true, $ne: '', $ne: null },
       chestNumber: { $exists: true, $ne: '', $ne: null },
       team: { $exists: true, $ne: '', $ne: null },
       section: { $exists: true, $ne: '', $ne: null }
-    }).toArray();
+    };
+    
+    // Add team filter if specified
+    if (team) {
+      query.team = team;
+    }
+    
+    const candidates = await collection.find(query).toArray();
     
     return NextResponse.json(candidates);
   } catch (error) {

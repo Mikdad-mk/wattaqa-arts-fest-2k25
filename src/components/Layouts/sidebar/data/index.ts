@@ -2,6 +2,17 @@ import * as Icons from "../icons";
 
 export const NAV_DATA = [
   {
+    label: "TEAM PORTAL",
+    items: [
+      {
+        title: "Team Admin",
+        url: "/team-admin",
+        icon: Icons.User,
+        items: [],
+      },
+    ],
+  },
+  {
     label: "FESTIVAL MANAGEMENT",
     items: [
       {

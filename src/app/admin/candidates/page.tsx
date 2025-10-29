@@ -9,14 +9,7 @@ export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    chestNumber: '',
-    name: '',
-    team: '',
-    section: '' as 'senior' | 'junior' | 'sub-junior' | ''
-  });
+  const [selectedTeam, setSelectedTeam] = useState<string>('all');
 
   // Filter out blank/empty candidates
   const filterValidCandidates = (candidates: Candidate[]) => {
@@ -62,188 +55,79 @@ export default function CandidatesPage() {
     fetchData();
   }, []);
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Filter candidates by selected team
+  const filteredCandidates = selectedTeam === 'all' 
+    ? candidates 
+    : candidates.filter(candidate => candidate.team === selectedTeam);
 
-    if (!formData.chestNumber || !formData.name || !formData.team || !formData.section) {
-      alert('Please fill in all fields');
-      return;
-    }
+  // Group candidates by team for statistics
+  const candidatesByTeam = teams.map(team => ({
+    ...team,
+    candidateCount: candidates.filter(c => c.team === team.code).length,
+    totalPoints: candidates.filter(c => c.team === team.code).reduce((sum, c) => sum + c.points, 0),
+    avgPoints: candidates.filter(c => c.team === team.code).length > 0 
+      ? (candidates.filter(c => c.team === team.code).reduce((sum, c) => sum + c.points, 0) / candidates.filter(c => c.team === team.code).length).toFixed(1)
+      : '0'
+  }));
 
-    try {
-      setSubmitting(true);
-      const response = await fetch('/api/candidates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        // Reset form
-        setFormData({
-          chestNumber: '',
-          name: '',
-          team: '',
-          section: '' as 'senior' | 'junior' | 'sub-junior' | ''
-        });
-
-        // Refresh candidates list
-        await fetchData();
-        alert('Candidate added successfully!');
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Error adding candidate');
-      }
-    } catch (error) {
-      console.error('Error adding candidate:', error);
-      alert('Error adding candidate');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Handle delete candidate
-  const handleDelete = async (candidateId: string, candidateName: string) => {
-    if (!confirm(`Are you sure you want to delete ${candidateName}? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      setDeleting(candidateId);
-      const response = await fetch(`/api/candidates?id=${candidateId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        await fetchData(); // Refresh the list
-        alert('Candidate deleted successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error deleting candidate: ${error.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error deleting candidate:', error);
-      alert('Error deleting candidate');
-    } finally {
-      setDeleting(null);
-    }
-  };
-
-  // Get team color (hex color)
-  const getTeamColor = (teamName: string) => {
-    const team = teams.find(t => t.name === teamName);
-    return team?.color || '#6B7280';
-  };
-
-  // Get contrast color for text
-  const getContrastColor = (hexColor: string) => {
-    const hex = hexColor.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness > 128 ? '#000000' : '#FFFFFF';
-  };
   return (
     <>
-      <Breadcrumb pageName="Candidates" />
+      <Breadcrumb pageName="Candidates Management" />
 
       <div className="space-y-6">
-        {/* Add New Candidate */}
-        <ShowcaseSection title="Add New Candidate">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Chest Number *
-                </label>
-                <input
-                  type="text"
-                  name="chestNumber"
-                  value={formData.chestNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter chest number (e.g., 201)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter candidate full name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
-                  required
-                />
-              </div>
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">ℹ️</span>
+            <div>
+              <h3 className="font-semibold text-blue-900">Admin Management View</h3>
+              <p className="text-blue-700 text-sm">
+                Candidates are added and managed by team admins. This page provides an overview of all registered candidates across teams.
+              </p>
             </div>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Team Name *
-                </label>
-                <select
-                  name="team"
-                  value={formData.team}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
-                  required
-                >
-                  <option value="">Select team</option>
-                  {teams.map((team) => (
-                    <option key={team._id?.toString()} value={team.name}>{team.name}</option>
-                  ))}
-                </select>
+        {/* Team Statistics */}
+        <ShowcaseSection title="Team Statistics">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {candidatesByTeam.map((team) => (
+              <div key={team._id?.toString()} className="bg-white border-2 rounded-lg p-6 hover:shadow-md transition-shadow"
+                   style={{ borderColor: team.color + '40' }}>
+                <div className="flex items-center mb-4">
+                  <div 
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold mr-4"
+                    style={{ backgroundColor: team.color }}
+                  >
+                    {team.code}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{team.name}</h3>
+                    <p className="text-sm text-gray-600">{team.description}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{team.candidateCount}</div>
+                    <div className="text-xs text-gray-500">Candidates</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold" style={{ color: team.color }}>{team.totalPoints}</div>
+                    <div className="text-xs text-gray-500">Total Points</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-700">{team.avgPoints}</div>
+                    <div className="text-xs text-gray-500">Avg Points</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Section *
-                </label>
-                <select
-                  name="section"
-                  value={formData.section}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
-                  required
-                >
-                  <option value="">Select section</option>
-                  <option value="senior">Senior</option>
-                  <option value="junior">Junior</option>
-                  <option value="sub-junior">Sub Junior</option>
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50"
-            >
-              {submitting ? 'Adding Candidate...' : 'Add Candidate'}
-            </button>
-          </form>
+            ))}
+          </div>
         </ShowcaseSection>
 
-        {/* Candidates List */}
-        <ShowcaseSection title="Candidates List">
+        {/* Candidates Overview */}
+        <ShowcaseSection title="Candidates Overview">
           {loading ? (
             <div className="flex items-center justify-center h-32">
               <div className="text-center">
@@ -251,76 +135,125 @@ export default function CandidatesPage() {
                 <p className="text-gray-600">Loading candidates...</p>
               </div>
             </div>
-          ) : candidates.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">No candidates found. Add your first candidate above!</p>
-            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Chest No.</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Name</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Team</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Section</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Points</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {candidates.map((candidate) => (
-                    <tr key={candidate._id?.toString()} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-900 font-bold">{candidate.chestNumber}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
-                            style={{ backgroundColor: getTeamColor(candidate.team) }}
-                          >
-                            <span
-                              className="text-xs font-bold"
-                              style={{ color: getContrastColor(getTeamColor(candidate.team)) }}
-                            >
-                              {candidate.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                            </span>
-                          </div>
-                          <span className="font-bold text-gray-900">{candidate.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-3 h-3 rounded-full border border-gray-300"
-                            style={{ backgroundColor: getTeamColor(candidate.team) }}
-                          />
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 border border-gray-200">
-                            {candidate.team}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-700 font-medium">
-                        {candidate.section.charAt(0).toUpperCase() + candidate.section.slice(1).replace('-', ' ')}
-                      </td>
-                      <td className="py-3 px-4 text-gray-900 font-bold">{candidate.points}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex space-x-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                          <button
-                            onClick={() => handleDelete(candidate._id!.toString(), candidate.name)}
-                            disabled={deleting === candidate._id?.toString()}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
-                          >
-                            {deleting === candidate._id?.toString() ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Filter Controls */}
+              <div className="mb-6 flex justify-between items-center">
+                <div className="flex items-center space-x-4">
+                  <label className="text-sm font-medium text-gray-700">Filter by Team:</label>
+                  <select
+                    value={selectedTeam}
+                    onChange={(e) => setSelectedTeam(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="all">All Teams ({candidates.length})</option>
+                    {teams.map((team) => (
+                      <option key={team.code} value={team.code}>
+                        {team.name} ({candidates.filter(c => c.team === team.code).length})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  Showing {filteredCandidates.length} of {candidates.length} candidates
+                </div>
+              </div>
+
+              {/* Candidates Table */}
+              {filteredCandidates.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 text-6xl mb-4">👥</div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No Candidates Found</h3>
+                  <p className="text-gray-500">
+                    {selectedTeam === 'all' 
+                      ? 'No candidates have been registered yet. Team admins can add candidates through their portals.'
+                      : `No candidates found for ${teams.find(t => t.code === selectedTeam)?.name}. Team admin can add candidates through their portal.`
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr className="border-b-2 border-gray-200">
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">Chest Number</th>
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">Name</th>
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">Team</th>
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">Section</th>
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">Points</th>
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCandidates.map((candidate) => {
+                        const team = teams.find(t => t.code === candidate.team);
+                        return (
+                          <tr key={candidate._id?.toString()} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 font-mono font-bold text-gray-900">{candidate.chestNumber}</td>
+                            <td className="py-3 px-4 font-medium text-gray-900">{candidate.name}</td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-2">
+                                <div 
+                                  className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                                  style={{ backgroundColor: team?.color }}
+                                >
+                                  {candidate.team}
+                                </div>
+                                <span className="font-medium">{team?.name}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200 capitalize">
+                                {candidate.section.replace('-', ' ')}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-gray-900">{candidate.points}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                                Active
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
+        </ShowcaseSection>
+
+        {/* Instructions */}
+        <ShowcaseSection title="How to Manage Candidates">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="text-4xl mb-3">👥</div>
+              <h3 className="font-semibold text-blue-900 mb-2">Team Admins Add Candidates</h3>
+              <p className="text-sm text-blue-700">
+                Each team admin can add their own team members through the Team Admin Portal.
+              </p>
+            </div>
+            
+            <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
+              <div className="text-4xl mb-3">📊</div>
+              <h3 className="font-semibold text-green-900 mb-2">Admin Monitors Progress</h3>
+              <p className="text-sm text-green-700">
+                View statistics, track registrations, and monitor team performance from this dashboard.
+              </p>
+            </div>
+            
+            <div className="text-center p-6 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="text-4xl mb-3">🏆</div>
+              <h3 className="font-semibold text-purple-900 mb-2">Results & Rankings</h3>
+              <p className="text-sm text-purple-700">
+                Manage competition results and update candidate points through the Results page.
+              </p>
+            </div>
+          </div>
         </ShowcaseSection>
       </div>
     </>
