@@ -135,8 +135,7 @@ export default function TeamCandidatesPage() {
   const candidatesBySection = {
     senior: candidates.filter(c => c.section === 'senior'),
     junior: candidates.filter(c => c.section === 'junior'),
-    'sub-junior': candidates.filter(c => c.section === 'sub-junior'),
-    general: candidates.filter(c => c.section === 'general')
+    'sub-junior': candidates.filter(c => c.section === 'sub-junior')
   };
 
   if (loading) {
@@ -203,7 +202,6 @@ export default function TeamCandidatesPage() {
                 <option value="senior">Senior</option>
                 <option value="junior">Junior</option>
                 <option value="sub-junior">Sub Junior</option>
-                <option value="general">General</option>
               </select>
             </div>
             <div className="flex items-end">
@@ -294,7 +292,6 @@ export default function TeamCandidatesPage() {
                         <option value="senior">Senior</option>
                         <option value="junior">Junior</option>
                         <option value="sub-junior">Sub Junior</option>
-                        <option value="general">General</option>
                       </select>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">

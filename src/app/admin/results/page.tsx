@@ -55,6 +55,16 @@ export default function ResultsPage() {
         fetch('/api/teams')
       ]);
       
+      // Check if all responses are OK before parsing JSON
+      const responses = [resultsRes, programmesRes, candidatesRes, participantsRes, teamsRes];
+      const responseNames = ['results', 'programmes', 'candidates', 'programme-participants', 'teams'];
+      
+      for (let i = 0; i < responses.length; i++) {
+        if (!responses[i].ok) {
+          throw new Error(`Failed to fetch ${responseNames[i]}: ${responses[i].status} ${responses[i].statusText}`);
+        }
+      }
+      
       const [resultsData, programmesData, candidatesData, participantsData, teamsData] = await Promise.all([
         resultsRes.json(),
         programmesRes.json(),
@@ -63,13 +73,19 @@ export default function ResultsPage() {
         teamsRes.json()
       ]);
       
-      setResults(resultsData);
-      setProgrammes(programmesData);
-      setCandidates(candidatesData);
-      setParticipants(participantsData);
-      setTeams(teamsData);
+      setResults(resultsData || []);
+      setProgrammes(programmesData || []);
+      setCandidates(candidatesData || []);
+      setParticipants(participantsData || []);
+      setTeams(teamsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Set empty arrays as fallback
+      setResults([]);
+      setProgrammes([]);
+      setCandidates([]);
+      setParticipants([]);
+      setTeams([]);
     } finally {
       setLoading(false);
     }
