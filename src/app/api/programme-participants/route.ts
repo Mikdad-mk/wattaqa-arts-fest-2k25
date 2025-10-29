@@ -20,10 +20,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const team = searchParams.get('team');
     const programme = searchParams.get('programme');
+    const programmeId = searchParams.get('programmeId');
 
     let query: any = {};
     if (team) query.teamCode = team;
     if (programme) query.programmeId = programme;
+    if (programmeId) query.programmeId = programmeId;
 
     const participants = await collection.find(query).toArray();
     

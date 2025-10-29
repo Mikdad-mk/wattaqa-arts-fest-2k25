@@ -28,12 +28,6 @@ export const NAV_DATA = [
         items: [],
       },
       {
-        title: "Team Admins",
-        url: "/admin/team-admins",
-        icon: Icons.Authentication,
-        items: [],
-      },
-      {
         title: "Candidates",
         url: "/admin/candidates",
         icon: Icons.Authentication,

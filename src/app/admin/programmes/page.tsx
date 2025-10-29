@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 import { Programme, ProgrammeParticipant, Team } from '@/types';
@@ -395,7 +396,12 @@ export default function ProgrammesPage() {
                           <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center">
                             <span className="text-white text-xs">{getCategoryIcon(programme.category)}</span>
                           </div>
-                          <span className="font-medium text-gray-900">{programme.name}</span>
+                          <Link 
+                            href={`/programme/${programme._id}`}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                          >
+                            {programme.name}
+                          </Link>
                         </div>
                       </td>
                       <td className="py-3 px-4">

@@ -8,6 +8,7 @@ export interface Team {
   description: string;
   motto?: string;
   captain: string;
+  captainEmail?: string;
   leaders?: string[];
   members: number;
   points: number;

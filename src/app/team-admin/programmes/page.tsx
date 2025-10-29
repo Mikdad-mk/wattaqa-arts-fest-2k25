@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Candidate, Programme, ProgrammeParticipant, Team } from '@/types';
 import TeamBreadcrumb from '@/components/TeamAdmin/TeamBreadcrumb';
 
@@ -446,7 +447,12 @@ function ProgrammeCard({
           : 'border-gray-200 hover:border-blue-300 hover:shadow-lg bg-white'
       }`}>
         <div className="flex justify-between items-start mb-3">
-          <h3 className="font-bold text-base text-gray-900 leading-tight">{programme.name}</h3>
+          <Link 
+            href={`/programme/${programme._id}`}
+            className="font-bold text-base text-blue-600 hover:text-blue-800 hover:underline leading-tight transition-colors"
+          >
+            {programme.name}
+          </Link>
           <span className="text-xs bg-gray-800 text-white px-3 py-1 rounded-full font-mono font-bold">
             {programme.code}
           </span>

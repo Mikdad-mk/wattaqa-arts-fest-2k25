@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Team } from '@/types';
 import TeamSidebar from '@/components/TeamAdmin/TeamSidebar';
 import TeamHeader from '@/components/TeamAdmin/TeamHeader';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function TeamAdminLayout({
   children,
@@ -16,10 +17,17 @@ export default function TeamAdminLayout({
 
   useEffect(() => {
     fetchTeams();
-    // Check if team is stored in localStorage
-    const storedTeam = localStorage.getItem('selectedTeam');
-    if (storedTeam) {
-      setSelectedTeam(storedTeam);
+    // Check if user is team captain and get their team
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user.userType === 'team-captain' && user.team) {
+          setSelectedTeam(user.team.code);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
     }
   }, []);
 
@@ -98,28 +106,30 @@ export default function TeamAdminLayout({
   const selectedTeamData = teams.find(t => t.code === selectedTeam);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-poppins"
-         style={{
-           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)`,
-           backgroundSize: '40px 40px'
-         }}>
-      <TeamSidebar 
-        selectedTeam={selectedTeam} 
-        teamData={selectedTeamData}
-        onSwitchTeam={() => {
-          setSelectedTeam('');
-          localStorage.removeItem('selectedTeam');
-        }}
-      />
-      <div className="w-full bg-transparent">
-        <TeamHeader teamData={selectedTeamData} />
-        <main className="isolate mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-[calc(100vh-200px)]">
-            {children}
-          </div>
-        </main>
+    <ProtectedRoute requireTeamCaptain={true}>
+      <div className="flex min-h-screen bg-gray-50 font-poppins"
+           style={{
+             backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)`,
+             backgroundSize: '40px 40px'
+           }}>
+        <TeamSidebar 
+          selectedTeam={selectedTeam} 
+          teamData={selectedTeamData}
+          onSwitchTeam={() => {
+            setSelectedTeam('');
+            localStorage.removeItem('selectedTeam');
+          }}
+        />
+        <div className="w-full bg-transparent">
+          <TeamHeader teamData={selectedTeamData} />
+          <main className="isolate mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 min-h-[calc(100vh-200px)]">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

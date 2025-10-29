@@ -20,6 +20,7 @@ export async function GET() {
           color: '#22C55E',
           description: 'Team Sumud - Steadfastness and Perseverance',
           captain: 'To be assigned',
+          captainEmail: '',
           members: 0,
           points: 0,
           createdAt: new Date(),
@@ -31,6 +32,7 @@ export async function GET() {
           color: '#EF4444',
           description: 'Team Intifada - Uprising and Resistance',
           captain: 'To be assigned',
+          captainEmail: '',
           members: 0,
           points: 0,
           createdAt: new Date(),
@@ -42,6 +44,7 @@ export async function GET() {
           color: '#374151',
           description: 'Team Aqsa - Sacred and Noble',
           captain: 'To be assigned',
+          captainEmail: '',
           members: 0,
           points: 0,
           createdAt: new Date(),
@@ -82,7 +85,15 @@ export async function POST(request: Request) {
     
     const result = await collection.insertOne(newTeam);
     
-    // Note: Teams do not sync with Google Sheets (only candidates, programmes, results sync)
+    // Sync to Google Sheets
+    try {
+      const { sheetsSync } = await import('@/lib/sheetsSync');
+      await sheetsSync.syncToSheets('teams');
+      console.log('✅ Team synced to Google Sheets');
+    } catch (syncError) {
+      console.error('❌ Error syncing team to Google Sheets:', syncError);
+      // Don't fail the request if sync fails
+    }
     
     return NextResponse.json({ success: true, id: result.insertedId });
   } catch (error) {
@@ -120,7 +131,15 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
     
-    // Note: Teams do not sync with Google Sheets (only candidates, programmes, results sync)
+    // Sync to Google Sheets
+    try {
+      const { sheetsSync } = await import('@/lib/sheetsSync');
+      await sheetsSync.syncToSheets('teams');
+      console.log('✅ Team updated and synced to Google Sheets');
+    } catch (syncError) {
+      console.error('❌ Error syncing team to Google Sheets:', syncError);
+      // Don't fail the request if sync fails
+    }
 
     return NextResponse.json({ success: true, message: 'Team updated successfully' });
   } catch (error) {
@@ -155,7 +174,15 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
     
-    // Note: Teams do not sync with Google Sheets (only candidates, programmes, results sync)
+    // Sync to Google Sheets
+    try {
+      const { sheetsSync } = await import('@/lib/sheetsSync');
+      await sheetsSync.syncToSheets('teams');
+      console.log('✅ Team deleted and synced to Google Sheets');
+    } catch (syncError) {
+      console.error('❌ Error syncing team deletion to Google Sheets:', syncError);
+      // Don't fail the request if sync fails
+    }
 
     return NextResponse.json({ success: true, message: 'Team deleted successfully' });
   } catch (error) {

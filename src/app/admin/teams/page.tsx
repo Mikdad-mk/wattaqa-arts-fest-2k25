@@ -18,6 +18,7 @@ export default function TeamsPage() {
     description: '',
     motto: '',
     captain: '',
+    captainEmail: '',
     leaders: ['', '']
   });
 
@@ -98,6 +99,7 @@ export default function TeamsPage() {
       description: team.description,
       motto: team.motto || '',
       captain: team.captain,
+      captainEmail: team.captainEmail || '',
       leaders: team.leaders && team.leaders.length >= 2 ? team.leaders : ['', '']
     });
     setShowAddForm(true);
@@ -132,6 +134,7 @@ export default function TeamsPage() {
       description: '',
       motto: '',
       captain: '',
+      captainEmail: '',
       leaders: ['', '']
     });
     setEditingTeam(null);
@@ -209,10 +212,11 @@ export default function TeamsPage() {
             </p>
           </div>
           
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-yellow-800 mb-2">📋 Sync Information</h4>
-            <p className="text-sm text-yellow-700">
-              Teams do not sync with Google Sheets. Only Candidates, Programmes, and Results sync automatically. 
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-green-800 mb-2">📋 Sync Information</h4>
+            <p className="text-sm text-green-700">
+              Teams now sync with Google Sheets automatically! When you create, update, or delete teams, 
+              the changes are synced to your Google Sheets including the captain's email address. 
               Team member counts and points are calculated from synced data.
             </p>
           </div>
@@ -333,6 +337,20 @@ export default function TeamsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Captain name"
                     required
+                  />
+                </div>
+
+                {/* Team Captain Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Team Captain Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.captainEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, captainEmail: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="captain@example.com"
                   />
                 </div>
               </div>
@@ -466,6 +484,9 @@ export default function TeamsPage() {
                   <div className="mb-3">
                     <p className="text-xs font-medium text-gray-500 mb-1">CAPTAIN</p>
                     <p className="text-sm font-medium text-gray-800">{team.captain}</p>
+                    {team.captainEmail && (
+                      <p className="text-xs text-gray-600 mt-1">📧 {team.captainEmail}</p>
+                    )}
                   </div>
 
                   {/* Leaders */}

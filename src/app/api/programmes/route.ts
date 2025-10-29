@@ -3,11 +3,26 @@ import { getDatabase } from '@/lib/mongodb';
 import { Programme } from '@/types';
 import { ObjectId } from 'mongodb';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
     const db = await getDatabase();
     const collection = db.collection<Programme>('programmes');
     
+    // If ID is provided, fetch single programme
+    if (id) {
+      const programme = await collection.findOne({ _id: new ObjectId(id) });
+      
+      if (!programme) {
+        return NextResponse.json({ error: 'Programme not found' }, { status: 404 });
+      }
+      
+      return NextResponse.json(programme);
+    }
+    
+    // Otherwise, fetch all programmes
     // Filter out blank/empty programmes using MongoDB query
     const programmes = await collection.find({
       name: { $exists: true, $ne: '', $ne: null },

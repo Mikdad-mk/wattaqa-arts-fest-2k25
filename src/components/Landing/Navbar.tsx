@@ -47,9 +47,9 @@ export function Navbar() {
                                 }`}>Schedule</a>
                             <a href="#contact" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
                                 }`}>Contact</a>
-                            <Link href="/admin/dashboard" className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105 ${isScrolled ? "px-4 py-2 text-sm font-semibold" : "px-3 py-1.5 text-xs font-medium"
+                            <Link href="/login" className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all duration-300 transform hover:scale-105 ${isScrolled ? "px-4 py-2 text-sm font-semibold" : "px-3 py-1.5 text-xs font-medium"
                                 }`}>
-                                Admin
+                                Login
                             </Link>
                         </div>
                     </div>
@@ -97,10 +97,10 @@ export function Navbar() {
                         className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                         Contact
                     </a>
-                    <Link href="/admin/dashboard"
+                    <Link href="/login"
                         onClick={() => setIsOpen(false)}
                         className="block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-3 py-3 rounded-lg mx-0 mt-2 text-center font-semibold transition-all duration-300">
-                        Admin Dashboard
+                        Login
                     </Link>
                 </div>
             </div>
