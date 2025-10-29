@@ -70,7 +70,8 @@ export const SPREADSHEET_CONFIG = {
     CANDIDATES: 'Candidates', 
     RESULTS: 'Results',
     PROGRAMMES: 'Programmes',
-    BASIC: 'Festival_Info'
+    BASIC: 'Festival_Info',
+    PROGRAMME_REGISTRATIONS: 'Programme_Registrations'
   }
 };
 
@@ -133,6 +134,19 @@ export function convertToSheetFormat(data: any[], type: string): any[][] {
         result.updatedAt?.toISOString() || ''
       ]);
       
+    case 'programme-registrations':
+      return data.map(registration => [
+        registration._id?.toString() || '',
+        registration.programmeId || '',
+        registration.programmeCode || '',
+        registration.programmeName || '',
+        registration.teamCode || '',
+        Array.isArray(registration.participants) ? registration.participants.join(', ') : '',
+        registration.status || '',
+        registration.createdAt?.toISOString() || '',
+        registration.updatedAt?.toISOString() || ''
+      ]);
+      
     default:
       return [];
   }
@@ -151,6 +165,9 @@ export function getSheetHeaders(type: string): string[] {
       
     case 'results':
       return ['ID', 'Programme', 'Section', 'Position Type', '1st Place', '2nd Place', '3rd Place', '1st Points', '2nd Points', '3rd Points', 'Notes', 'Created', 'Updated'];
+      
+    case 'programme-registrations':
+      return ['ID', 'Programme ID', 'Programme Code', 'Programme Name', 'Team Code', 'Participants', 'Status', 'Created', 'Updated'];
       
     default:
       return [];
@@ -230,5 +247,128 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
       
     default:
       return [];
+  }
+}
+/
+/ Sync programme registration to Google Sheets
+export async function syncProgrammeRegistrationToSheets(registration: any) {
+  try {
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = SPREADSHEET_CONFIG.SPREADSHEET_ID;
+    
+    // Create team-specific sheet name
+    const teamSheetName = `${registration.teamCode}_Registrations`;
+    
+    // Check if team sheet exists, create if not
+    try {
+      await sheets.spreadsheets.get({
+        spreadsheetId,
+        ranges: [teamSheetName],
+      });
+    } catch (error) {
+      // Sheet doesn't exist, create it
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: teamSheetName,
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: 10
+                }
+              }
+            }
+          }]
+        }
+      });
+      
+      // Add headers to new sheet
+      const headers = ['ID', 'Programme Code', 'Programme Name', 'Participants', 'Status', 'Registered Date'];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${teamSheetName}!A1:F1`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [headers]
+        }
+      });
+    }
+    
+    // Add registration data
+    const registrationData = [
+      registration._id?.toString() || '',
+      registration.programmeCode || '',
+      registration.programmeName || '',
+      Array.isArray(registration.participants) ? registration.participants.join(', ') : '',
+      registration.status || '',
+      new Date().toISOString()
+    ];
+    
+    // Append to team sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${teamSheetName}!A:F`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [registrationData]
+      }
+    });
+    
+    // Also add to main Programme_Registrations sheet
+    try {
+      await sheets.spreadsheets.get({
+        spreadsheetId,
+        ranges: [SPREADSHEET_CONFIG.SHEETS.PROGRAMME_REGISTRATIONS],
+      });
+    } catch (error) {
+      // Main sheet doesn't exist, create it
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: SPREADSHEET_CONFIG.SHEETS.PROGRAMME_REGISTRATIONS,
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: 10
+                }
+              }
+            }
+          }]
+        }
+      });
+      
+      // Add headers
+      const headers = getSheetHeaders('programme-registrations');
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${SPREADSHEET_CONFIG.SHEETS.PROGRAMME_REGISTRATIONS}!A1:I1`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [headers]
+        }
+      });
+    }
+    
+    // Add to main sheet
+    const mainSheetData = convertToSheetFormat([registration], 'programme-registrations')[0];
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${SPREADSHEET_CONFIG.SHEETS.PROGRAMME_REGISTRATIONS}!A:I`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [mainSheetData]
+      }
+    });
+    
+    console.log(`✅ Programme registration synced to Google Sheets: ${teamSheetName}`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error syncing programme registration to Google Sheets:', error);
+    return false;
   }
 }

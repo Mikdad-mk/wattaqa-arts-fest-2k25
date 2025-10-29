@@ -68,10 +68,10 @@ export default function TeamProgrammesPage() {
   });
   
   // Calculate correct statistics
-  const registeredProgrammeIds = participants.map(p => p.programmeId);
+  const registeredProgrammeIds = [...new Set(participants.map(p => p.programmeId))]; // Unique programme IDs
   const availableProgrammesCount = availableProgrammes.length;
-  const registeredCount = participants.length;
-  const unregisteredCount = availableProgrammesCount - registeredCount;
+  const registeredCount = registeredProgrammeIds.length; // Count unique registered programmes
+  const unregisteredCount = Math.max(0, availableProgrammesCount - registeredCount); // Ensure non-negative
 
   const groupedProgrammes = {
     sports: availableProgrammes.filter(p => p.category === 'sports' && p.section !== 'general'),
@@ -388,7 +388,7 @@ function ProgrammeCard({
         return newSelection;
       } else {
         // Check if we can add more
-        if (prev.length < programme.requiredParticipants) {
+        if (prev.length < Number(programme.requiredParticipants)) {
           const newSelection = [...prev, chestNumber];
           console.log('➕ Adding, new selection:', newSelection);
           return newSelection;
@@ -402,7 +402,7 @@ function ProgrammeCard({
   };
 
   const handleRegister = async () => {
-    if (selectedParticipants.length !== programme.requiredParticipants) {
+    if (selectedParticipants.length !== Number(programme.requiredParticipants)) {
       alert(`Please select exactly ${programme.requiredParticipants} participant(s)`);
       return;
     }
@@ -641,7 +641,7 @@ function ProgrammeCard({
                       ) : (
                         filteredCandidates.map((candidate) => {
                           const isSelected = selectedParticipants.includes(candidate.chestNumber);
-                          const isDisabled = !isSelected && selectedParticipants.length >= programme.requiredParticipants;
+                          const isDisabled = !isSelected && selectedParticipants.length >= Number(programme.requiredParticipants);
                           
                           return (
                             <div
@@ -704,9 +704,9 @@ function ProgrammeCard({
                     <div className="text-sm text-yellow-700 space-y-1">
                       <p><strong>Selected:</strong> {JSON.stringify(selectedParticipants)}</p>
                       <p><strong>Required:</strong> {programme.requiredParticipants}</p>
-                      <p><strong>Selection Valid:</strong> {selectedParticipants.length === programme.requiredParticipants ? '✅ YES' : '❌ NO'}</p>
-                      <p><strong>Button Enabled:</strong> {selectedParticipants.length === programme.requiredParticipants && !isSubmitting ? '✅ YES' : '❌ NO'}</p>
-                      <p><strong>Debug:</strong> Selected={selectedParticipants.length}, Required={programme.requiredParticipants}, Equal={selectedParticipants.length === programme.requiredParticipants}</p>
+                      <p><strong>Selection Valid:</strong> {selectedParticipants.length === Number(programme.requiredParticipants) ? '✅ YES' : '❌ NO'}</p>
+                      <p><strong>Button Enabled:</strong> {selectedParticipants.length === Number(programme.requiredParticipants) && !isSubmitting ? '✅ YES' : '❌ NO'}</p>
+                      <p><strong>Debug:</strong> Selected={selectedParticipants.length}, Required={programme.requiredParticipants} (type: {typeof programme.requiredParticipants}), Equal={selectedParticipants.length === Number(programme.requiredParticipants)}</p>
                       <p><strong>Candidates:</strong> {sectionCandidates.length} eligible, {filteredCandidates.length} filtered</p>
                     </div>
                     <div className="mt-2 flex gap-2">
@@ -746,7 +746,7 @@ function ProgrammeCard({
 
                   {/* Selection Summary */}
                   <div className={`border-2 rounded-lg p-4 mb-4 ${
-                    selectedParticipants.length === programme.requiredParticipants 
+                    selectedParticipants.length === Number(programme.requiredParticipants) 
                       ? 'bg-green-50 border-green-300' 
                       : selectedParticipants.length > 0 
                       ? 'bg-yellow-50 border-yellow-300' 
@@ -754,20 +754,20 @@ function ProgrammeCard({
                   }`}>
                     <div className="flex items-center justify-between mb-2">
                       <h5 className={`font-semibold flex items-center ${
-                        selectedParticipants.length === programme.requiredParticipants 
+                        selectedParticipants.length === Number(programme.requiredParticipants) 
                           ? 'text-green-800' 
                           : selectedParticipants.length > 0 
                           ? 'text-yellow-800' 
                           : 'text-gray-800'
                       }`}>
                         <span className="text-lg mr-2">
-                          {selectedParticipants.length === programme.requiredParticipants ? '✅' : 
+                          {selectedParticipants.length === Number(programme.requiredParticipants) ? '✅' : 
                            selectedParticipants.length > 0 ? '⏳' : '⭕'}
                         </span>
                         Selected Participants
                       </h5>
                       <div className={`px-3 py-1 rounded-full font-bold text-lg ${
-                        selectedParticipants.length === programme.requiredParticipants 
+                        selectedParticipants.length === Number(programme.requiredParticipants) 
                           ? 'bg-green-200 text-green-800' 
                           : selectedParticipants.length > 0 
                           ? 'bg-yellow-200 text-yellow-800' 
@@ -803,12 +803,12 @@ function ProgrammeCard({
                             );
                           })}
                         </div>
-                        {selectedParticipants.length < programme.requiredParticipants && (
+                        {selectedParticipants.length < Number(programme.requiredParticipants) && (
                           <p className="text-yellow-700 text-sm font-medium">
-                            ⚠️ Need {programme.requiredParticipants - selectedParticipants.length} more participant{programme.requiredParticipants - selectedParticipants.length > 1 ? 's' : ''} to register
+                            ⚠️ Need {Number(programme.requiredParticipants) - selectedParticipants.length} more participant{Number(programme.requiredParticipants) - selectedParticipants.length > 1 ? 's' : ''} to register
                           </p>
                         )}
-                        {selectedParticipants.length === programme.requiredParticipants && (
+                        {selectedParticipants.length === Number(programme.requiredParticipants) && (
                           <p className="text-green-700 text-sm font-medium">
                             🎉 Perfect! You can now register your team.
                           </p>
@@ -831,11 +831,11 @@ function ProgrammeCard({
                   Selected: <span className="text-blue-600">{selectedParticipants.length}</span> / <span className="text-blue-600">{programme.requiredParticipants}</span> Participants
                 </div>
                 <div className={`px-4 py-2 rounded-full text-sm font-bold ${
-                  selectedParticipants.length === programme.requiredParticipants 
+                  selectedParticipants.length === Number(programme.requiredParticipants) 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-orange-100 text-orange-800'
                 }`}>
-                  {selectedParticipants.length === programme.requiredParticipants ? '✅ Ready to Register' : '⏳ Selection Incomplete'}
+                  {selectedParticipants.length === Number(programme.requiredParticipants) ? '✅ Ready to Register' : '⏳ Selection Incomplete'}
                 </div>
               </div>
               
@@ -857,7 +857,7 @@ function ProgrammeCard({
                     console.log('✅ Button should be enabled:', selectedParticipants.length === programme.requiredParticipants && !isSubmitting);
                     
                     // Force validation check
-                    if (selectedParticipants.length !== programme.requiredParticipants) {
+                    if (selectedParticipants.length !== Number(programme.requiredParticipants)) {
                       alert(`❌ Please select exactly ${programme.requiredParticipants} participant(s). Currently selected: ${selectedParticipants.length}`);
                       return;
                     }
@@ -869,13 +869,13 @@ function ProgrammeCard({
                     
                     handleRegister();
                   }}
-                  disabled={!(selectedParticipants.length === programme.requiredParticipants && !isSubmitting)}
+                  disabled={!(selectedParticipants.length === Number(programme.requiredParticipants) && !isSubmitting)}
                   className={`flex-1 px-6 py-3 font-bold text-lg rounded-lg transition-all duration-200 border-2 ${
-                    selectedParticipants.length === programme.requiredParticipants && !isSubmitting
+                    selectedParticipants.length === Number(programme.requiredParticipants) && !isSubmitting
                       ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 border-green-600 hover:border-green-700'
                       : 'bg-gray-400 text-white cursor-not-allowed opacity-75 border-gray-400'
                   }`}
-                  title={selectedParticipants.length !== programme.requiredParticipants 
+                  title={selectedParticipants.length !== Number(programme.requiredParticipants) 
                     ? `Select exactly ${programme.requiredParticipants} participants to enable registration`
                     : 'Click to register your team for this programme'
                   }
@@ -885,7 +885,7 @@ function ProgrammeCard({
                       <span className="animate-spin mr-2">⏳</span>
                       Registering...
                     </span>
-                  ) : selectedParticipants.length === programme.requiredParticipants ? (
+                  ) : selectedParticipants.length === Number(programme.requiredParticipants) ? (
                     <span className="flex items-center justify-center">
                       <span className="mr-2">🎉</span>
                       REGISTER TEAM
@@ -895,7 +895,7 @@ function ProgrammeCard({
                       <span className="mr-2">⚠️</span>
                       {selectedParticipants.length === 0 
                         ? `SELECT ${programme.requiredParticipants} PARTICIPANTS`
-                        : `NEED ${programme.requiredParticipants - selectedParticipants.length} MORE`
+                        : `NEED ${Number(programme.requiredParticipants) - selectedParticipants.length} MORE`
                       }
                     </span>
                   )}
