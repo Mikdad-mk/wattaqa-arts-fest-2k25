@@ -7,11 +7,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
   return (
     <ProtectedRoute requireAdmin={true}>
       <div className="flex min-h-screen bg-gray-50 font-poppins"
-           style={{
-             backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)`,
-             backgroundSize: '40px 40px'
-           }}>
+          backgroundSize: '40px 40px'
+        }}>
 
         <Sidebar />
         <div className="w-full bg-transparent">

@@ -10,7 +10,7 @@ export async function getGoogleSheetsClient() {
     // Check if all required environment variables are present
     const requiredVars = [
       'GOOGLE_SPREADSHEET_ID',
-      'GOOGLE_CLIENT_EMAIL', 
+      'GOOGLE_CLIENT_EMAIL',
       'GOOGLE_PRIVATE_KEY',
       'GOOGLE_PROJECT_ID'
     ];
@@ -46,7 +46,7 @@ export async function getGoogleSheetsClient() {
     return sheets;
   } catch (error) {
     console.error('Error initializing Google Sheets client:', error);
-    
+
     // Provide helpful error messages
     if (error instanceof Error) {
       if (error.message.includes('unregistered callers')) {
@@ -57,7 +57,7 @@ export async function getGoogleSheetsClient() {
         throw new Error('Spreadsheet not found. Check the GOOGLE_SPREADSHEET_ID and make sure the spreadsheet is shared with the service account.');
       }
     }
-    
+
     throw error;
   }
 }
@@ -67,7 +67,7 @@ export const SPREADSHEET_CONFIG = {
   SPREADSHEET_ID: process.env.GOOGLE_SPREADSHEET_ID || '',
   SHEETS: {
     TEAMS: 'Teams',
-    CANDIDATES: 'Candidates', 
+    CANDIDATES: 'Candidates',
     RESULTS: 'Results',
     PROGRAMMES: 'Programmes',
     BASIC: 'Festival_Info',
@@ -78,7 +78,7 @@ export const SPREADSHEET_CONFIG = {
 // Helper functions for data conversion
 export function convertToSheetFormat(data: any[], type: string): any[][] {
   if (!data || data.length === 0) return [];
-  
+
   switch (type) {
     case 'teams':
       return data.map(team => [
@@ -94,7 +94,7 @@ export function convertToSheetFormat(data: any[], type: string): any[][] {
         team.createdAt?.toISOString() || '',
         team.updatedAt?.toISOString() || ''
       ]);
-      
+
     case 'candidates':
       return data.map(candidate => [
         candidate._id?.toString() || '',
@@ -104,7 +104,7 @@ export function convertToSheetFormat(data: any[], type: string): any[][] {
         candidate.section || '',
         candidate.points || 0
       ]);
-      
+
     case 'programmes':
       return data.map(programme => [
         programme._id?.toString() || '',
@@ -117,24 +117,55 @@ export function convertToSheetFormat(data: any[], type: string): any[][] {
         programme.createdAt?.toISOString() || '',
         programme.updatedAt?.toISOString() || ''
       ]);
-      
+
     case 'results':
-      return data.map(result => [
-        result._id?.toString() || '',
-        result.programme || '',
-        result.section || '',
-        result.positionType || '',
-        Array.isArray(result.firstPlace) ? result.firstPlace.map((w: any) => `${w.chestNumber}(${w.grade})`).join(', ') : '',
-        Array.isArray(result.secondPlace) ? result.secondPlace.map((w: any) => `${w.chestNumber}(${w.grade})`).join(', ') : '',
-        Array.isArray(result.thirdPlace) ? result.thirdPlace.map((w: any) => `${w.chestNumber}(${w.grade})`).join(', ') : '',
-        result.firstPoints || 0,
-        result.secondPoints || 0,
-        result.thirdPoints || 0,
-        result.notes || '',
-        result.createdAt?.toISOString() || '',
-        result.updatedAt?.toISOString() || ''
-      ]);
-      
+      return data.map(result => {
+        // Helper function to combine individual and team results
+        const combineResults = (individualResults: any[], teamResults: any[]) => {
+          const individual = Array.isArray(individualResults) ? individualResults.map((w: any) =>
+            w.grade ? `${w.chestNumber}(${w.grade})` : w.chestNumber
+          ) : [];
+
+          const teams = Array.isArray(teamResults) ? teamResults.map((t: any) =>
+            t.grade ? `${t.teamCode}(${t.grade})` : t.teamCode
+          ) : [];
+
+          return [...individual, ...teams].join(', ');
+        };
+
+        // Helper function to combine participation grades
+        const combineParticipation = (individualGrades: any[], teamGrades: any[]) => {
+          const individual = Array.isArray(individualGrades) ? individualGrades.map((p: any) =>
+            `${p.chestNumber}(${p.grade}:${p.points})`
+          ) : [];
+
+          const teams = Array.isArray(teamGrades) ? teamGrades.map((p: any) =>
+            `${p.teamCode}(${p.grade}:${p.points})`
+          ) : [];
+
+          return [...individual, ...teams].join(', ');
+        };
+
+        return [
+          result._id?.toString() || '',
+          result.programme || '',
+          result.section || '',
+          result.positionType || '',
+          // Combined results in same columns
+          combineResults(result.firstPlace, result.firstPlaceTeams),
+          combineResults(result.secondPlace, result.secondPlaceTeams),
+          combineResults(result.thirdPlace, result.thirdPlaceTeams),
+          combineParticipation(result.participationGrades, result.participationTeamGrades),
+          result.firstPoints || 0,
+          result.secondPoints || 0,
+          result.thirdPoints || 0,
+          result.participationPoints || 0,
+          result.notes || '',
+          result.createdAt?.toISOString() || '',
+          result.updatedAt?.toISOString() || ''
+        ];
+      });
+
     case 'programme-registrations':
       return data.map(registration => [
         registration._id?.toString() || '',
@@ -147,7 +178,7 @@ export function convertToSheetFormat(data: any[], type: string): any[][] {
         registration.createdAt?.toISOString() || '',
         registration.updatedAt?.toISOString() || ''
       ]);
-      
+
     default:
       return [];
   }
@@ -157,19 +188,19 @@ export function getSheetHeaders(type: string): string[] {
   switch (type) {
     case 'teams':
       return ['ID', 'Code', 'Name', 'Color', 'Description', 'Captain', 'Captain Email', 'Members', 'Points', 'Created', 'Updated'];
-      
+
     case 'candidates':
       return ['ID', 'Chest Number', 'Name', 'Team', 'Section', 'Points'];
-      
+
     case 'programmes':
       return ['ID', 'Code', 'Name', 'Category', 'Section', 'Position Type', 'Status', 'Created', 'Updated'];
-      
+
     case 'results':
-      return ['ID', 'Programme', 'Section', 'Position Type', '1st Place', '2nd Place', '3rd Place', '1st Points', '2nd Points', '3rd Points', 'Notes', 'Created', 'Updated'];
-      
+      return ['ID', 'Programme', 'Section', 'Position Type', '1st Place', '2nd Place', '3rd Place', 'Participation Grades', '1st Points', '2nd Points', '3rd Points', 'Participation Points', 'Notes', 'Created', 'Updated'];
+
     case 'programme-registrations':
       return ['ID', 'Programme ID', 'Programme Code', 'Programme Name', 'Team Code', 'Participants', 'Status', 'Created', 'Updated'];
-      
+
     default:
       return [];
   }
@@ -177,9 +208,9 @@ export function getSheetHeaders(type: string): string[] {
 
 export function convertFromSheetFormat(rows: any[][], type: string): any[] {
   if (!rows || rows.length <= 1) return []; // Skip header row
-  
+
   const dataRows = rows.slice(1); // Remove header row
-  
+
   switch (type) {
     case 'teams':
       return dataRows.map(row => ({
@@ -195,7 +226,7 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
         createdAt: row[9] ? new Date(row[9]) : new Date(),
         updatedAt: row[10] ? new Date(row[10]) : new Date()
       }));
-      
+
     case 'candidates':
       return dataRows.map(row => ({
         _id: row[0] || undefined,
@@ -207,7 +238,7 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
         createdAt: new Date(),
         updatedAt: new Date()
       }));
-      
+
     case 'programmes':
       return dataRows.map(row => ({
         _id: row[0] || undefined,
@@ -220,7 +251,7 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
         createdAt: row[7] ? new Date(row[7]) : new Date(),
         updatedAt: row[8] ? new Date(row[8]) : new Date()
       }));
-      
+
     case 'results':
       return dataRows.map(row => ({
         _id: row[0] || undefined,
@@ -246,7 +277,7 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
         createdAt: row[11] ? new Date(row[11]) : new Date(),
         updatedAt: row[12] ? new Date(row[12]) : new Date()
       }));
-      
+
     default:
       return [];
   }
@@ -257,10 +288,10 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
   try {
     const sheets = await getGoogleSheetsClient();
     const spreadsheetId = SPREADSHEET_CONFIG.SPREADSHEET_ID;
-    
+
     // Create team-specific sheet name
     const teamSheetName = `${registration.teamCode}_Registrations`;
-    
+
     // Check if team sheet exists, create if not
     try {
       await sheets.spreadsheets.get({
@@ -285,7 +316,7 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
           }]
         }
       });
-      
+
       // Add headers to new sheet
       const headers = ['ID', 'Programme Code', 'Programme Name', 'Participants', 'Status', 'Registered Date'];
       await sheets.spreadsheets.values.update({
@@ -297,7 +328,7 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
         }
       });
     }
-    
+
     // Add registration data
     const registrationData = [
       registration._id?.toString() || '',
@@ -307,7 +338,7 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
       registration.status || '',
       new Date().toISOString()
     ];
-    
+
     // Append to team sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId,
@@ -317,7 +348,7 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
         values: [registrationData]
       }
     });
-    
+
     // Also add to main Programme_Registrations sheet
     try {
       await sheets.spreadsheets.get({
@@ -342,7 +373,7 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
           }]
         }
       });
-      
+
       // Add headers
       const headers = getSheetHeaders('programme-registrations');
       await sheets.spreadsheets.values.update({
@@ -354,7 +385,7 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
         }
       });
     }
-    
+
     // Add to main sheet
     const mainSheetData = convertToSheetFormat([registration], 'programme-registrations')[0];
     await sheets.spreadsheets.values.append({
@@ -365,12 +396,129 @@ export async function syncProgrammeRegistrationToSheets(registration: any) {
         values: [mainSheetData]
       }
     });
-    
+
     console.log(`✅ Programme registration synced to Google Sheets: ${teamSheetName}`);
     return true;
-    
+
   } catch (error) {
     console.error('❌ Error syncing programme registration to Google Sheets:', error);
+    return false;
+  }
+}
+
+// Sync result to Google Sheets
+export async function syncResultToSheets(result: any) {
+  try {
+    const sheets = await getGoogleSheetsClient();
+    const spreadsheetId = SPREADSHEET_CONFIG.SPREADSHEET_ID;
+
+    // Check if Results sheet exists, create if not
+    try {
+      await sheets.spreadsheets.get({
+        spreadsheetId,
+        ranges: [SPREADSHEET_CONFIG.SHEETS.RESULTS],
+      });
+    } catch (error) {
+      // Sheet doesn't exist, create it
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: SPREADSHEET_CONFIG.SHEETS.RESULTS,
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: 20
+                }
+              }
+            }
+          }]
+        }
+      });
+
+      // Add headers to new sheet
+      const headers = [
+        'ID', 'Programme', 'Section', 'Position Type',
+        '1st Place', '2nd Place', '3rd Place',
+        'Participation Grades',
+        '1st Points', '2nd Points', '3rd Points', 'Participation Points',
+        'Notes', 'Created', 'Updated'
+      ];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${SPREADSHEET_CONFIG.SHEETS.RESULTS}!A1:N1`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [headers]
+        }
+      });
+    }
+
+    // Helper function to combine individual and team results
+    const combineResults = (individualResults: any[], teamResults: any[]) => {
+      const individual = Array.isArray(individualResults) ? individualResults.map((w: any) =>
+        w.grade ? `${w.chestNumber}(${w.grade})` : w.chestNumber
+      ) : [];
+
+      const teams = Array.isArray(teamResults) ? teamResults.map((t: any) =>
+        t.grade ? `${t.teamCode}(${t.grade})` : t.teamCode
+      ) : [];
+
+      return [...individual, ...teams].join(', ');
+    };
+
+    // Helper function to combine participation grades
+    const combineParticipation = (individualGrades: any[], teamGrades: any[]) => {
+      const individual = Array.isArray(individualGrades) ? individualGrades.map((p: any) =>
+        `${p.chestNumber}(${p.grade}:${p.points})`
+      ) : [];
+
+      const teams = Array.isArray(teamGrades) ? teamGrades.map((p: any) =>
+        `${p.teamCode}(${p.grade}:${p.points})`
+      ) : [];
+
+      return [...individual, ...teams].join(', ');
+    };
+
+    // Prepare result data for sheets
+    const resultData = [
+      result._id?.toString() || '',
+      result.programme || '',
+      result.section || '',
+      result.positionType || '',
+      // Combined 1st place (individuals + teams)
+      combineResults(result.firstPlace, result.firstPlaceTeams),
+      // Combined 2nd place (individuals + teams)
+      combineResults(result.secondPlace, result.secondPlaceTeams),
+      // Combined 3rd place (individuals + teams)
+      combineResults(result.thirdPlace, result.thirdPlaceTeams),
+      // Combined participation grades (individuals + teams)
+      combineParticipation(result.participationGrades, result.participationTeamGrades),
+      result.firstPoints || 0,
+      result.secondPoints || 0,
+      result.thirdPoints || 0,
+      result.participationPoints || 0,
+      result.notes || '',
+      result.createdAt?.toISOString() || new Date().toISOString(),
+      result.updatedAt?.toISOString() || new Date().toISOString()
+    ];
+
+    // Add to Results sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${SPREADSHEET_CONFIG.SHEETS.RESULTS}!A:N`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [resultData]
+      }
+    });
+
+    console.log(`✅ Result synced to Google Sheets: ${result.programme}`);
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error syncing result to Google Sheets:', error);
     return false;
   }
 }

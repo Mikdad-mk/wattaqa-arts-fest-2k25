@@ -18,16 +18,24 @@ export default function ResultsPage() {
   const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [filteredParticipants, setFilteredParticipants] = useState<any[]>([]);
+  const [filteredTeams, setFilteredTeams] = useState<any[]>([]);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [teams, setTeams] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     programme: '',
-    section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
+    section: '' as 'senior' | 'junior' | 'sub-junior' | '',
     positionType: '' as 'individual' | 'group' | 'general' | '',
+    // For individual/group programmes
     firstPlace: [] as string[],
     secondPlace: [] as string[],
     thirdPlace: [] as string[],
     participationGrades: [] as { chestNumber: string; grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'; points: number }[],
+    // For general programmes (team-based)
+    firstPlaceTeams: [] as string[],
+    secondPlaceTeams: [] as string[],
+    thirdPlaceTeams: [] as string[],
+    participationTeamGrades: [] as { teamCode: string; grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'; points: number }[],
     firstPoints: 10,
     secondPoints: 7,
     thirdPoints: 5,
@@ -39,24 +47,27 @@ export default function ResultsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [resultsRes, programmesRes, candidatesRes, participantsRes] = await Promise.all([
+      const [resultsRes, programmesRes, candidatesRes, participantsRes, teamsRes] = await Promise.all([
         fetch('/api/results'),
         fetch('/api/programmes'),
         fetch('/api/candidates'),
-        fetch('/api/programme-participants')
+        fetch('/api/programme-participants'),
+        fetch('/api/teams')
       ]);
       
-      const [resultsData, programmesData, candidatesData, participantsData] = await Promise.all([
+      const [resultsData, programmesData, candidatesData, participantsData, teamsData] = await Promise.all([
         resultsRes.json(),
         programmesRes.json(),
         candidatesRes.json(),
-        participantsRes.json()
+        participantsRes.json(),
+        teamsRes.json()
       ]);
       
       setResults(resultsData);
       setProgrammes(programmesData);
       setCandidates(candidatesData);
       setParticipants(participantsData);
+      setTeams(teamsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -91,26 +102,48 @@ export default function ResultsPage() {
     setFormData(prev => ({ ...prev, section: section as any }));
     
     if (selectedProgramme && section) {
-      // Filter participants for this programme and section
-      const programmeParticipants = participants.filter(p => 
-        p.programmeId === selectedProgramme._id?.toString()
-      );
-      
-      // Get detailed participant info
-      const detailedParticipants = programmeParticipants.flatMap(pp => 
-        pp.participants.map(chestNumber => {
-          const candidate = candidates.find(c => c.chestNumber === chestNumber);
+      if (selectedProgramme.positionType === 'general') {
+        // For general programmes, show teams that registered
+        const programmeParticipants = participants.filter(p => 
+          p.programmeId === selectedProgramme._id?.toString()
+        );
+        
+        const registeredTeams = programmeParticipants.map(pp => {
+          const team = teams.find(t => t.code === pp.teamCode);
           return {
-            chestNumber,
-            candidate,
             teamCode: pp.teamCode,
+            team,
             programmeName: pp.programmeName,
-            programmeCode: pp.programmeCode
+            programmeCode: pp.programmeCode,
+            participantCount: pp.participants.length
           };
-        })
-      ).filter(p => p.candidate && (section === 'general' || p.candidate.section === section));
+        });
+        
+        setFilteredTeams(registeredTeams);
+        setFilteredParticipants([]);
+      } else {
+        // For individual/group programmes, show participants
+        const programmeParticipants = participants.filter(p => 
+          p.programmeId === selectedProgramme._id?.toString()
+        );
+        
+        const detailedParticipants = programmeParticipants.flatMap(pp => 
+          pp.participants.map(chestNumber => {
+            const candidate = candidates.find(c => c.chestNumber === chestNumber);
+            return {
+              chestNumber,
+              candidate,
+              teamCode: pp.teamCode,
+              programmeName: pp.programmeName,
+              programmeCode: pp.programmeCode
+            };
+          })
+        ).filter(p => p.candidate && p.candidate.section === section);
+        
+        setFilteredParticipants(detailedParticipants);
+        setFilteredTeams([]);
+      }
       
-      setFilteredParticipants(detailedParticipants);
       setShowParticipants(true);
     }
   };
@@ -125,6 +158,16 @@ export default function ResultsPage() {
     ].includes(chestNumber);
   };
 
+  // Check if team is assigned
+  const isTeamAssigned = (teamCode: string) => {
+    return [
+      ...formData.firstPlaceTeams,
+      ...formData.secondPlaceTeams,
+      ...formData.thirdPlaceTeams,
+      ...formData.participationTeamGrades.map(pg => pg.teamCode)
+    ].includes(teamCode);
+  };
+
   // Add/remove from position
   const togglePosition = (position: 'firstPlace' | 'secondPlace' | 'thirdPlace', chestNumber: string) => {
     setFormData(prev => ({
@@ -132,6 +175,16 @@ export default function ResultsPage() {
       [position]: prev[position].includes(chestNumber)
         ? prev[position].filter(cn => cn !== chestNumber)
         : [...prev[position], chestNumber]
+    }));
+  };
+
+  // Add/remove team from position
+  const toggleTeamPosition = (position: 'firstPlaceTeams' | 'secondPlaceTeams' | 'thirdPlaceTeams', teamCode: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [position]: prev[position].includes(teamCode)
+        ? prev[position].filter(tc => tc !== teamCode)
+        : [...prev[position], teamCode]
     }));
   };
 
@@ -154,6 +207,25 @@ export default function ResultsPage() {
     }));
   };
 
+  // Add team participation grade
+  const addTeamParticipationGrade = (teamCode: string, grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F', points: number) => {
+    setFormData(prev => ({
+      ...prev,
+      participationTeamGrades: [
+        ...prev.participationTeamGrades.filter(pg => pg.teamCode !== teamCode),
+        { teamCode, grade, points }
+      ]
+    }));
+  };
+
+  // Remove team participation grade
+  const removeTeamParticipationGrade = (teamCode: string) => {
+    setFormData(prev => ({
+      ...prev,
+      participationTeamGrades: prev.participationTeamGrades.filter(pg => pg.teamCode !== teamCode)
+    }));
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,10 +237,16 @@ export default function ResultsPage() {
 
     const submitData = {
       ...formData,
+      // Individual/group results
       firstPlace: formData.firstPlace.map(cn => ({ chestNumber: cn })),
       secondPlace: formData.secondPlace.map(cn => ({ chestNumber: cn })),
       thirdPlace: formData.thirdPlace.map(cn => ({ chestNumber: cn })),
-      participationGrades: formData.participationGrades
+      participationGrades: formData.participationGrades,
+      // Team results
+      firstPlaceTeams: formData.firstPlaceTeams.map(tc => ({ teamCode: tc })),
+      secondPlaceTeams: formData.secondPlaceTeams.map(tc => ({ teamCode: tc })),
+      thirdPlaceTeams: formData.thirdPlaceTeams.map(tc => ({ teamCode: tc })),
+      participationTeamGrades: formData.participationTeamGrades
     };
 
     try {
@@ -189,6 +267,10 @@ export default function ResultsPage() {
           secondPlace: [],
           thirdPlace: [],
           participationGrades: [],
+          firstPlaceTeams: [],
+          secondPlaceTeams: [],
+          thirdPlaceTeams: [],
+          participationTeamGrades: [],
           firstPoints: 10,
           secondPoints: 7,
           thirdPoints: 5,
@@ -198,6 +280,7 @@ export default function ResultsPage() {
         setSelectedProgramme(null);
         setSelectedSection('');
         setFilteredParticipants([]);
+        setFilteredTeams([]);
         setShowParticipants(false);
         
         await fetchData();
@@ -304,7 +387,6 @@ export default function ResultsPage() {
                   <option value="senior">Senior</option>
                   <option value="junior">Junior</option>
                   <option value="sub-junior">Sub Junior</option>
-                  <option value="general">General</option>
                 </select>
                 {selectedSection && (
                   <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -319,8 +401,130 @@ export default function ResultsPage() {
               </div>
             </div>
 
-            {/* Registered Participants Display */}
-            {showParticipants && filteredParticipants.length > 0 && (
+            {/* Registered Teams Display (for general programmes) */}
+            {showParticipants && selectedProgramme?.positionType === 'general' && filteredTeams.length > 0 && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">🏆</span>
+                  Registered Teams ({filteredTeams.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredTeams.map((teamEntry, index) => {
+                    const isAssigned = isTeamAssigned(teamEntry.teamCode);
+                    const isFirst = formData.firstPlaceTeams.includes(teamEntry.teamCode);
+                    const isSecond = formData.secondPlaceTeams.includes(teamEntry.teamCode);
+                    const isThird = formData.thirdPlaceTeams.includes(teamEntry.teamCode);
+                    const participationGrade = formData.participationTeamGrades.find(pg => pg.teamCode === teamEntry.teamCode);
+                    
+                    return (
+                      <div 
+                        key={index}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          isAssigned
+                            ? 'border-green-300 bg-green-50'
+                            : 'border-gray-200 bg-white hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2 mb-1"
+                              style={{ backgroundColor: teamEntry.team?.color || '#6B7280' }}
+                            >
+                              {teamEntry.teamCode}
+                            </div>
+                            <div className="font-bold text-gray-900">
+                              {teamEntry.team?.name || teamEntry.teamCode}
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {teamEntry.participantCount} participants
+                            </div>
+                          </div>
+                          {isAssigned && (
+                            <div className="text-green-600 font-bold text-sm">
+                              ✅
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Position Buttons */}
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleTeamPosition('firstPlaceTeams', teamEntry.teamCode)}
+                            className={`px-2 py-1 text-xs rounded ${
+                              isFirst ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            }`}
+                          >
+                            🥇 1st
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleTeamPosition('secondPlaceTeams', teamEntry.teamCode)}
+                            className={`px-2 py-1 text-xs rounded ${
+                              isSecond ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                          >
+                            🥈 2nd
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleTeamPosition('thirdPlaceTeams', teamEntry.teamCode)}
+                            className={`px-2 py-1 text-xs rounded ${
+                              isThird ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                            }`}
+                          >
+                            🥉 3rd
+                          </button>
+                        </div>
+                        
+                        {/* Participation Grade */}
+                        <div className="flex items-center space-x-1">
+                          <select
+                            value={participationGrade?.grade || ''}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                addTeamParticipationGrade(
+                                  teamEntry.teamCode, 
+                                  e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F',
+                                  formData.participationPoints
+                                );
+                              } else {
+                                removeTeamParticipationGrade(teamEntry.teamCode);
+                              }
+                            }}
+                            className="text-xs px-1 py-1 border border-gray-300 rounded bg-white"
+                          >
+                            <option value="">Grade</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                          </select>
+                          {participationGrade && (
+                            <input
+                              type="number"
+                              value={participationGrade.points}
+                              onChange={(e) => addTeamParticipationGrade(
+                                teamEntry.teamCode, 
+                                participationGrade.grade, 
+                                parseInt(e.target.value) || 0
+                              )}
+                              className="text-xs px-1 py-1 border border-gray-300 rounded bg-white w-12"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Registered Participants Display (for individual/group programmes) */}
+            {showParticipants && selectedProgramme?.positionType !== 'general' && filteredParticipants.length > 0 && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <span className="mr-2">👥</span>
@@ -438,7 +642,17 @@ export default function ResultsPage() {
               </div>
             )}
 
-            {showParticipants && filteredParticipants.length === 0 && (
+            {showParticipants && selectedProgramme?.positionType === 'general' && filteredTeams.length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <div className="text-yellow-600 text-4xl mb-2">⚠️</div>
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Teams Found</h3>
+                <p className="text-yellow-700">
+                  No teams have registered for this programme in the selected section.
+                </p>
+              </div>
+            )}
+
+            {showParticipants && selectedProgramme?.positionType !== 'general' && filteredParticipants.length === 0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                 <div className="text-yellow-600 text-4xl mb-2">⚠️</div>
                 <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Participants Found</h3>
@@ -551,8 +765,9 @@ export default function ResultsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          {result.firstPlace && result.firstPlace.length > 0 ? (
-                            <div>
+                          {/* Individual/Group Results */}
+                          {result.firstPlace && result.firstPlace.length > 0 && (
+                            <div className="mb-2">
                               {result.firstPlace.map((winner, index) => (
                                 <div key={index} className="mb-1">
                                   <span className="font-medium text-gray-900">{winner.chestNumber}</span>
@@ -560,15 +775,29 @@ export default function ResultsPage() {
                               ))}
                               <p className="text-gray-500">{result.firstPoints} pts each</p>
                             </div>
-                          ) : (
+                          )}
+                          {/* Team Results */}
+                          {result.firstPlaceTeams && result.firstPlaceTeams.length > 0 && (
+                            <div>
+                              {result.firstPlaceTeams.map((winner, index) => (
+                                <div key={index} className="mb-1 flex items-center">
+                                  <span className="inline-block w-4 h-4 rounded-full mr-2" style={{ backgroundColor: teams.find(t => t.code === winner.teamCode)?.color || '#6B7280' }}></span>
+                                  <span className="font-medium text-gray-900">{winner.teamCode}</span>
+                                </div>
+                              ))}
+                              <p className="text-gray-500">{result.firstPoints} pts each</p>
+                            </div>
+                          )}
+                          {(!result.firstPlace || result.firstPlace.length === 0) && (!result.firstPlaceTeams || result.firstPlaceTeams.length === 0) && (
                             <p className="text-gray-400">-</p>
                           )}
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          {result.secondPlace && result.secondPlace.length > 0 ? (
-                            <div>
+                          {/* Individual/Group Results */}
+                          {result.secondPlace && result.secondPlace.length > 0 && (
+                            <div className="mb-2">
                               {result.secondPlace.map((winner, index) => (
                                 <div key={index} className="mb-1">
                                   <span className="font-medium text-gray-900">{winner.chestNumber}</span>
@@ -576,15 +805,29 @@ export default function ResultsPage() {
                               ))}
                               <p className="text-gray-500">{result.secondPoints} pts each</p>
                             </div>
-                          ) : (
+                          )}
+                          {/* Team Results */}
+                          {result.secondPlaceTeams && result.secondPlaceTeams.length > 0 && (
+                            <div>
+                              {result.secondPlaceTeams.map((winner, index) => (
+                                <div key={index} className="mb-1 flex items-center">
+                                  <span className="inline-block w-4 h-4 rounded-full mr-2" style={{ backgroundColor: teams.find(t => t.code === winner.teamCode)?.color || '#6B7280' }}></span>
+                                  <span className="font-medium text-gray-900">{winner.teamCode}</span>
+                                </div>
+                              ))}
+                              <p className="text-gray-500">{result.secondPoints} pts each</p>
+                            </div>
+                          )}
+                          {(!result.secondPlace || result.secondPlace.length === 0) && (!result.secondPlaceTeams || result.secondPlaceTeams.length === 0) && (
                             <p className="text-gray-400">-</p>
                           )}
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          {result.thirdPlace && result.thirdPlace.length > 0 ? (
-                            <div>
+                          {/* Individual/Group Results */}
+                          {result.thirdPlace && result.thirdPlace.length > 0 && (
+                            <div className="mb-2">
                               {result.thirdPlace.map((winner, index) => (
                                 <div key={index} className="mb-1">
                                   <span className="font-medium text-gray-900">{winner.chestNumber}</span>
@@ -592,15 +835,29 @@ export default function ResultsPage() {
                               ))}
                               <p className="text-gray-500">{result.thirdPoints} pts each</p>
                             </div>
-                          ) : (
+                          )}
+                          {/* Team Results */}
+                          {result.thirdPlaceTeams && result.thirdPlaceTeams.length > 0 && (
+                            <div>
+                              {result.thirdPlaceTeams.map((winner, index) => (
+                                <div key={index} className="mb-1 flex items-center">
+                                  <span className="inline-block w-4 h-4 rounded-full mr-2" style={{ backgroundColor: teams.find(t => t.code === winner.teamCode)?.color || '#6B7280' }}></span>
+                                  <span className="font-medium text-gray-900">{winner.teamCode}</span>
+                                </div>
+                              ))}
+                              <p className="text-gray-500">{result.thirdPoints} pts each</p>
+                            </div>
+                          )}
+                          {(!result.thirdPlace || result.thirdPlace.length === 0) && (!result.thirdPlaceTeams || result.thirdPlaceTeams.length === 0) && (
                             <p className="text-gray-400">-</p>
                           )}
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          {result.participationGrades && result.participationGrades.length > 0 ? (
-                            <div>
+                          {/* Individual/Group Participation */}
+                          {result.participationGrades && result.participationGrades.length > 0 && (
+                            <div className="mb-2">
                               {result.participationGrades.map((pg, index) => (
                                 <div key={index} className="flex items-center space-x-2 mb-1">
                                   <span className="font-medium text-gray-900">{pg.chestNumber}</span>
@@ -611,7 +868,23 @@ export default function ResultsPage() {
                                 </div>
                               ))}
                             </div>
-                          ) : (
+                          )}
+                          {/* Team Participation */}
+                          {result.participationTeamGrades && result.participationTeamGrades.length > 0 && (
+                            <div>
+                              {result.participationTeamGrades.map((pg, index) => (
+                                <div key={index} className="flex items-center space-x-2 mb-1">
+                                  <span className="inline-block w-4 h-4 rounded-full mr-2" style={{ backgroundColor: teams.find(t => t.code === pg.teamCode)?.color || '#6B7280' }}></span>
+                                  <span className="font-medium text-gray-900">{pg.teamCode}</span>
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                                    {pg.grade}
+                                  </span>
+                                  <span className="text-xs text-gray-500">({pg.points} pts)</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {(!result.participationGrades || result.participationGrades.length === 0) && (!result.participationTeamGrades || result.participationTeamGrades.length === 0) && (
                             <p className="text-gray-400">-</p>
                           )}
                         </div>

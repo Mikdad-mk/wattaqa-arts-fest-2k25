@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { Result } from '@/types';
 import { ObjectId } from 'mongodb';
-import { sheetsSync } from '@/lib/sheetsSync';
+import { syncResultToSheets } from '@/lib/googleSheets';
 
 
 export async function GET() {
@@ -27,15 +27,23 @@ export async function POST(request: Request) {
     const db = await getDatabase();
     const collection = db.collection<Result>('results');
     
-    const result = await collection.insertOne({
+    const newResult = {
       ...body,
       createdAt: new Date(),
       updatedAt: new Date()
-    });
+    };
+    
+    const result = await collection.insertOne(newResult);
+    
+    // Prepare result for Google Sheets sync
+    const resultWithId = {
+      _id: result.insertedId,
+      ...newResult
+    };
     
     // Auto-sync to Google Sheets
     try {
-      await sheetsSync.syncToSheets('results');
+      await syncResultToSheets(resultWithId);
     } catch (syncError) {
       console.error('Error syncing to sheets:', syncError);
       // Don't fail the main operation if sync fails
@@ -75,7 +83,11 @@ export async function PUT(request: Request) {
 
     // Auto-sync to Google Sheets
     try {
-      await sheetsSync.syncToSheets('results');
+      // Get the updated result for sync
+      const updatedResult = await collection.findOne({ _id: new ObjectId(id) });
+      if (updatedResult) {
+        await syncResultToSheets(updatedResult);
+      }
     } catch (syncError) {
       console.error('Error syncing to sheets:', syncError);
       // Don't fail the main operation if sync fails
@@ -103,13 +115,8 @@ export async function DELETE(request: Request) {
     
     const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
-    // Auto-sync to Google Sheets
-    try {
-      await sheetsSync.syncToSheets('results');
-    } catch (syncError) {
-      console.error('Error syncing to sheets:', syncError);
-      // Don't fail the main operation if sync fails
-    }
+    // Note: For deletion, we don't sync individual records to sheets
+    // The sheets sync would need to be a full resync to remove the deleted record
     
     return NextResponse.json({ success: true, message: 'Result deleted successfully' });
   } catch (error) {

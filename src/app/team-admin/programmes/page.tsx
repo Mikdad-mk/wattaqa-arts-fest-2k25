@@ -448,7 +448,7 @@ function ProgrammeCard({
       }`}>
         <div className="flex justify-between items-start mb-3">
           <Link 
-            href={`/programme/${programme._id}`}
+            href={`/admin/programmes/${programme._id}`}
             className="font-bold text-base text-blue-600 hover:text-blue-800 hover:underline leading-tight transition-colors"
           >
             {programme.name}
