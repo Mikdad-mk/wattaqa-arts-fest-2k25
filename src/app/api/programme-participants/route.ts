@@ -3,11 +3,17 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { syncProgrammeRegistrationToSheets } from '@/lib/googleSheets';
 
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const client = new MongoClient(uri);
+
+async function connectToDatabase() {
+  const client = new MongoClient(uri);
+  await client.connect();
+  return client;
+}
 
 export async function GET(request: NextRequest) {
+  let client;
   try {
-    await client.connect();
+    client = await connectToDatabase();
     const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
@@ -26,13 +32,16 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching programme participants:', error);
     return NextResponse.json({ error: 'Failed to fetch programme participants' }, { status: 500 });
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
 
 export async function POST(request: NextRequest) {
+  let client;
   try {
-    await client.connect();
+    client = await connectToDatabase();
     const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
@@ -85,13 +94,16 @@ export async function POST(request: NextRequest) {
     console.error('Error creating programme participant:', error);
     return NextResponse.json({ error: 'Failed to create programme participant' }, { status: 500 });
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
 
 export async function PUT(request: NextRequest) {
+  let client;
   try {
-    await client.connect();
+    client = await connectToDatabase();
     const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
@@ -123,13 +135,16 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating programme participant:', error);
     return NextResponse.json({ error: 'Failed to update programme participant' }, { status: 500 });
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  let client;
   try {
-    await client.connect();
+    client = await connectToDatabase();
     const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
@@ -151,6 +166,8 @@ export async function DELETE(request: NextRequest) {
     console.error('Error deleting programme participant:', error);
     return NextResponse.json({ error: 'Failed to delete programme participant' }, { status: 500 });
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
