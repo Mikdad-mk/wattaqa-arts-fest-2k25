@@ -24,7 +24,7 @@ export default function ResultsPage() {
   
   const [formData, setFormData] = useState({
     programme: '',
-    section: '' as 'senior' | 'junior' | 'sub-junior' | '',
+    section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
     positionType: '' as 'individual' | 'group' | 'general' | '',
     // For individual/group programmes
     firstPlace: [] as string[],
@@ -154,7 +154,7 @@ export default function ResultsPage() {
               programmeCode: pp.programmeCode
             };
           })
-        ).filter(p => p.candidate && p.candidate.section === section);
+        ).filter(p => p.candidate && (section === 'general' || p.candidate.section === section));
         
         setFilteredParticipants(detailedParticipants);
         setFilteredTeams([]);
@@ -403,6 +403,7 @@ export default function ResultsPage() {
                   <option value="senior">Senior</option>
                   <option value="junior">Junior</option>
                   <option value="sub-junior">Sub Junior</option>
+                  <option value="general">General</option>
                 </select>
                 {selectedSection && (
                   <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">

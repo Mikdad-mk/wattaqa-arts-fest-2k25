@@ -24,6 +24,11 @@ export default function RankingsPage() {
       { name: "Team Inthifada", points: 69, percentage: 100, color: "bg-red-500" },
       { name: "Team Aqsa", points: 72, percentage: 97, color: "bg-gray-600" },
       { name: "Team Sumud", points: 64, percentage: 93, color: "bg-green-500" }
+    ],
+    general: [
+      { name: "Team Aqsa", points: 45, percentage: 100, color: "bg-gray-600" },
+      { name: "Team Sumud", points: 42, percentage: 93, color: "bg-green-500" },
+      { name: "Team Inthifada", points: 38, percentage: 84, color: "bg-red-500" }
     ]
   };
 
@@ -141,10 +146,11 @@ export default function RankingsPage() {
 
         {/* Section-wise Rankings */}
         <ShowcaseSection title="Section-wise Rankings">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {renderBarChart(sectionData.senior, "Senior Section Rankings")}
             {renderBarChart(sectionData.junior, "Junior Section Rankings")}
             {renderBarChart(sectionData.subJunior, "Sub Junior Section Rankings")}
+            {renderBarChart(sectionData.general, "General Section Rankings")}
           </div>
         </ShowcaseSection>
 

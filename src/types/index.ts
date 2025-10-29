@@ -22,7 +22,7 @@ export interface Programme {
   name: string;
   category: 'arts' | 'sports';
   subcategory?: 'stage' | 'non-stage'; // For arts programmes
-  section: 'senior' | 'junior' | 'sub-junior';
+  section: 'senior' | 'junior' | 'sub-junior' | 'general';
   positionType: 'individual' | 'group' | 'general';
   requiredParticipants: number; // Number of participants required
   maxParticipants?: number; // Maximum participants allowed
@@ -45,7 +45,7 @@ export interface Candidate {
 export interface Result {
   _id?: ObjectId | string;
   programme: string;
-  section: 'senior' | 'junior' | 'sub-junior';
+  section: 'senior' | 'junior' | 'sub-junior' | 'general';
   positionType: 'individual' | 'group' | 'general';
   // For individual/group programmes (participant-based)
   firstPlace: { chestNumber: string; grade?: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D+' | 'D' | 'D-' | 'E+' | 'E' | 'E-' | 'F' }[];

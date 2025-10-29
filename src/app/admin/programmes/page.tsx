@@ -19,7 +19,7 @@ export default function ProgrammesPage() {
     name: '',
     category: '' as 'arts' | 'sports' | '',
     subcategory: '' as 'stage' | 'non-stage' | '',
-    section: '' as 'senior' | 'junior' | 'sub-junior' | '',
+    section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
     positionType: '' as 'individual' | 'group' | 'general' | '',
     requiredParticipants: 1,
     maxParticipants: ''
@@ -108,7 +108,7 @@ export default function ProgrammesPage() {
           name: '',
           category: '' as 'arts' | 'sports' | '',
           subcategory: '' as 'stage' | 'non-stage' | '',
-          section: '' as 'senior' | 'junior' | 'sub-junior' | '',
+          section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
           positionType: '' as 'individual' | 'group' | 'general' | '',
           requiredParticipants: 1,
           maxParticipants: ''
@@ -309,6 +309,7 @@ export default function ProgrammesPage() {
                       <option value="senior">Senior</option>
                       <option value="junior">Junior</option>
                       <option value="sub-junior">Sub Junior</option>
+                      <option value="general">General</option>
                     </select>
                   </div>
                   <div>
