@@ -57,7 +57,9 @@ export default function TeamsPage() {
 
     const teamData = {
       ...formData,
-      leaders: filteredLeaders
+      leaders: filteredLeaders,
+      members: editingTeam ? editingTeam.members : 0, // Preserve existing member count or start with 0
+      points: editingTeam ? editingTeam.points : 0   // Preserve existing points or start with 0
     };
 
     try {
@@ -76,6 +78,7 @@ export default function TeamsPage() {
       if (response.ok) {
         await fetchTeams();
         resetForm();
+        alert(editingTeam ? 'Team updated successfully!' : 'Team created successfully!');
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to save team');
@@ -110,6 +113,7 @@ export default function TeamsPage() {
 
       if (response.ok) {
         await fetchTeams();
+        alert('Team deleted successfully!');
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to delete team');
@@ -195,9 +199,28 @@ export default function TeamsPage() {
       <Breadcrumb pageName="Teams" />
 
       <div className="space-y-6">
+        {/* Info Section */}
+        <ShowcaseSection title="Team Management">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-medium text-blue-800 mb-2">🏆 Festival Teams</h4>
+            <p className="text-sm text-blue-700">
+              Manage your festival teams here. You can create, edit, and delete teams. 
+              The three main teams (SMD→SUMUD, INT→INTIFADA, AQS→AQSA) are recommended for the festival.
+            </p>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">📋 Sync Information</h4>
+            <p className="text-sm text-yellow-700">
+              Teams do not sync with Google Sheets. Only Candidates, Programmes, and Results sync automatically. 
+              Team member counts and points are calculated from synced data.
+            </p>
+          </div>
+        </ShowcaseSection>
+
         {/* Add Team Button */}
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Team Management</h2>
+          <h2 className="text-2xl font-bold text-gray-900">All Teams ({teams.length})</h2>
           <button
             onClick={() => setShowAddForm(true)}
             className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg"

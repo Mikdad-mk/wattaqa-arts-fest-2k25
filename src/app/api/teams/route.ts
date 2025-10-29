@@ -2,14 +2,56 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { Team } from '@/types';
 import { ObjectId } from 'mongodb';
-import { sheetsSync } from '@/lib/sheetsSync';
 
 export async function GET() {
   try {
     const db = await getDatabase();
     const collection = db.collection<Team>('teams');
     
-    const teams = await collection.find({}).toArray();
+    let teams = await collection.find({}).toArray();
+    
+    // If no teams exist, create the 3 fixed festival teams
+    // These teams are permanent and cannot be deleted
+    if (teams.length === 0) {
+      const defaultTeams: Team[] = [
+        {
+          code: 'SMD',
+          name: 'SUMUD',
+          color: '#22C55E',
+          description: 'Team Sumud - Steadfastness and Perseverance',
+          captain: 'To be assigned',
+          members: 0,
+          points: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          code: 'INT',
+          name: 'INTIFADA',
+          color: '#EF4444',
+          description: 'Team Intifada - Uprising and Resistance',
+          captain: 'To be assigned',
+          members: 0,
+          points: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          code: 'AQS',
+          name: 'AQSA',
+          color: '#374151',
+          description: 'Team Aqsa - Sacred and Noble',
+          captain: 'To be assigned',
+          members: 0,
+          points: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ];
+      
+      await collection.insertMany(defaultTeams);
+      teams = await collection.find({}).toArray();
+    }
     
     return NextResponse.json(teams);
   } catch (error) {
@@ -40,13 +82,7 @@ export async function POST(request: Request) {
     
     const result = await collection.insertOne(newTeam);
     
-    // Auto-sync to Google Sheets
-    try {
-      await sheetsSync.syncToSheets('teams');
-    } catch (syncError) {
-      console.error('Error syncing to sheets:', syncError);
-      // Don't fail the main operation if sync fails
-    }
+    // Note: Teams do not sync with Google Sheets (only candidates, programmes, results sync)
     
     return NextResponse.json({ success: true, id: result.insertedId });
   } catch (error) {
@@ -84,13 +120,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
     
-    // Auto-sync to Google Sheets
-    try {
-      await sheetsSync.syncToSheets('teams');
-    } catch (syncError) {
-      console.error('Error syncing to sheets:', syncError);
-      // Don't fail the main operation if sync fails
-    }
+    // Note: Teams do not sync with Google Sheets (only candidates, programmes, results sync)
 
     return NextResponse.json({ success: true, message: 'Team updated successfully' });
   } catch (error) {
@@ -101,6 +131,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    // Note: The three main festival teams (SMD, INT, AQS) should not be deleted
+    // This endpoint is kept for compatibility but main teams are protected
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -111,19 +143,19 @@ export async function DELETE(request: Request) {
     const db = await getDatabase();
     const collection = db.collection<Team>('teams');
     
+    // Check if this is one of the main teams
+    const team = await collection.findOne({ _id: new ObjectId(id) });
+    if (team && ['SUMUD', 'INTIFADA', 'AQSA'].includes(team.name)) {
+      return NextResponse.json({ error: 'Cannot delete main festival teams' }, { status: 403 });
+    }
+    
     const result = await collection.deleteOne({ _id: new ObjectId(id) });
     
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
     
-    // Auto-sync to Google Sheets
-    try {
-      await sheetsSync.syncToSheets('teams');
-    } catch (syncError) {
-      console.error('Error syncing to sheets:', syncError);
-      // Don't fail the main operation if sync fails
-    }
+    // Note: Teams do not sync with Google Sheets (only candidates, programmes, results sync)
 
     return NextResponse.json({ success: true, message: 'Team deleted successfully' });
   } catch (error) {

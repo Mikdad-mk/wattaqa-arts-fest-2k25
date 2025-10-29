@@ -100,10 +100,7 @@ export function convertToSheetFormat(data: any[], type: string): any[][] {
         candidate.name || '',
         candidate.team || '',
         candidate.section || '',
-        candidate.grade || '',
-        candidate.points || 0,
-        candidate.createdAt?.toISOString() || '',
-        candidate.updatedAt?.toISOString() || ''
+        candidate.points || 0
       ]);
       
     case 'programmes':
@@ -147,7 +144,7 @@ export function getSheetHeaders(type: string): string[] {
       return ['ID', 'Code', 'Name', 'Color', 'Description', 'Captain', 'Members', 'Points', 'Created', 'Updated'];
       
     case 'candidates':
-      return ['ID', 'Chest Number', 'Name', 'Team', 'Section', 'Grade', 'Points', 'Created', 'Updated'];
+      return ['ID', 'Chest Number', 'Name', 'Team', 'Section', 'Points'];
       
     case 'programmes':
       return ['ID', 'Code', 'Name', 'Category', 'Section', 'Position Type', 'Status', 'Created', 'Updated'];
@@ -187,10 +184,9 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
         name: row[2] || '',
         team: row[3] || '',
         section: row[4] || '',
-        grade: row[5] || '',
-        points: parseInt(row[6]) || 0,
-        createdAt: row[7] ? new Date(row[7]) : new Date(),
-        updatedAt: row[8] ? new Date(row[8]) : new Date()
+        points: parseInt(row[5]) || 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }));
       
     case 'programmes':

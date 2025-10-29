@@ -33,7 +33,6 @@ export interface Candidate {
   name: string;
   team: string;
   section: 'senior' | 'junior' | 'sub-junior' | 'general';
-  grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
   points: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -44,9 +43,9 @@ export interface Result {
   programme: string;
   section: 'senior' | 'junior' | 'sub-junior' | 'general';
   positionType: 'individual' | 'group' | 'general';
-  firstPlace: { chestNumber: string; grade?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' }[];
-  secondPlace: { chestNumber: string; grade?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' }[];
-  thirdPlace: { chestNumber: string; grade?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' }[];
+  firstPlace: { chestNumber: string; grade?: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D+' | 'D' | 'D-' | 'E+' | 'E' | 'E-' | 'F' }[];
+  secondPlace: { chestNumber: string; grade?: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D+' | 'D' | 'D-' | 'E+' | 'E' | 'E-' | 'F' }[];
+  thirdPlace: { chestNumber: string; grade?: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D+' | 'D' | 'D-' | 'E+' | 'E' | 'E-' | 'F' }[];
   firstPoints: number;
   secondPoints: number;
   thirdPoints: number;
