@@ -8,7 +8,7 @@ const client = new MongoClient(uri);
 export async function GET(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival-management');
+    const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
     const { searchParams } = new URL(request.url);
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival-management');
+    const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
     const body = await request.json();
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival-management');
+    const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
     const body = await request.json();
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     await client.connect();
-    const db = client.db('festival-management');
+    const db = client.db('wattaqa-festival-2k25');
     const collection = db.collection('programme_participants');
 
     const { searchParams } = new URL(request.url);

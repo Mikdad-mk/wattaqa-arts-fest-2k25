@@ -249,8 +249,8 @@ export function convertFromSheetFormat(rows: any[][], type: string): any[] {
       return [];
   }
 }
-/
-/ Sync programme registration to Google Sheets
+
+// Sync programme registration to Google Sheets
 export async function syncProgrammeRegistrationToSheets(registration: any) {
   try {
     const sheets = await getGoogleSheetsClient();
