@@ -40,6 +40,9 @@ export interface Candidate {
   team: string;
   section: 'senior' | 'junior' | 'sub-junior';
   points: number;
+  profileImage?: string; // Base64 encoded image or URL
+  profileImageMimeType?: string; // Image MIME type (image/jpeg, image/png, etc.)
+  profileImageSize?: number; // File size in bytes
   createdAt?: Date;
   updatedAt?: Date;
 }

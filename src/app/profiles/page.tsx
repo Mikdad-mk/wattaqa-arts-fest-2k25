@@ -268,10 +268,20 @@ export default function ProfilesPage() {
                   {/* Profile Header */}
                   <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 text-white">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                        <span className="text-lg font-bold">
-                          {candidate.name.charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white border-opacity-30">
+                        {candidate.profileImage ? (
+                          <img
+                            src={candidate.profileImage}
+                            alt={candidate.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-white bg-opacity-20 flex items-center justify-center">
+                            <span className="text-sm font-bold">
+                              {candidate.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-lg group-hover:text-indigo-100 transition-colors">

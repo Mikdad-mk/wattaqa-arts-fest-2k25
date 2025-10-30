@@ -7,6 +7,7 @@ interface IndividualStats {
         name: string;
         chestNumber: string;
         section: string;
+        profileImage?: string;
     };
     team: {
         name: string;
@@ -78,11 +79,21 @@ export function IndividualProfile({ individual }: IndividualProfileProps) {
             {/* Profile Header */}
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6">
                 <div className="flex items-center gap-4 mb-4">
-                    <div 
-                        className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl"
-                        style={{ backgroundColor: individual.team.color || '#8b5cf6' }}
-                    >
-                        {individual.candidate.name.substring(0, 2).toUpperCase()}
+                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200">
+                        {individual.candidate.profileImage ? (
+                            <img
+                                src={individual.candidate.profileImage}
+                                alt={individual.candidate.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div 
+                                className="w-full h-full flex items-center justify-center text-white font-bold text-sm"
+                                style={{ backgroundColor: individual.team.color || '#8b5cf6' }}
+                            >
+                                {individual.candidate.name.substring(0, 2).toUpperCase()}
+                            </div>
+                        )}
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

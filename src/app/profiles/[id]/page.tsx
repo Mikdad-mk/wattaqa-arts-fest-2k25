@@ -232,10 +232,20 @@ export default function ProfileDetailPage() {
           </div>
           
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-            <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <span className="text-white text-3xl font-bold">
-                {candidate.name.charAt(0).toUpperCase()}
-              </span>
+            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white border-opacity-30">
+              {candidate.profileImage ? (
+                <img
+                  src={candidate.profileImage}
+                  alt={candidate.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-white bg-opacity-20 flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">
+                    {candidate.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
             </div>
             
             <div className="flex-1">

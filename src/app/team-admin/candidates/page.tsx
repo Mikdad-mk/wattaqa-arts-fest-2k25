@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Candidate } from '@/types';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 export default function TeamCandidatesPage() {
   const searchParams = useSearchParams();
@@ -16,13 +17,19 @@ export default function TeamCandidatesPage() {
   const [newCandidate, setNewCandidate] = useState({
     chestNumber: '',
     name: '',
-    section: 'senior' as const
+    section: 'senior' as 'senior' | 'junior' | 'sub-junior',
+    profileImage: null as string | null,
+    profileImageMimeType: undefined as string | undefined,
+    profileImageSize: undefined as number | undefined
   });
 
   const [editCandidate, setEditCandidate] = useState({
     chestNumber: '',
     name: '',
-    section: 'senior' as const
+    section: 'senior' as 'senior' | 'junior' | 'sub-junior',
+    profileImage: null as string | null,
+    profileImageMimeType: undefined as string | undefined,
+    profileImageSize: undefined as number | undefined
   });
 
   useEffect(() => {
@@ -57,7 +64,14 @@ export default function TeamCandidatesPage() {
       });
 
       if (response.ok) {
-        setNewCandidate({ chestNumber: '', name: '', section: 'senior' });
+        setNewCandidate({ 
+          chestNumber: '', 
+          name: '', 
+          section: 'senior',
+          profileImage: null,
+          profileImageMimeType: undefined,
+          profileImageSize: undefined
+        });
         fetchCandidates();
         alert('Candidate added successfully!');
       } else {
@@ -122,13 +136,23 @@ export default function TeamCandidatesPage() {
     setEditCandidate({
       chestNumber: candidate.chestNumber,
       name: candidate.name,
-      section: candidate.section
+      section: candidate.section,
+      profileImage: candidate.profileImage || null,
+      profileImageMimeType: candidate.profileImageMimeType,
+      profileImageSize: candidate.profileImageSize
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditCandidate({ chestNumber: '', name: '', section: 'senior' });
+    setEditCandidate({ 
+      chestNumber: '', 
+      name: '', 
+      section: 'senior',
+      profileImage: null,
+      profileImageMimeType: undefined,
+      profileImageSize: undefined
+    });
   };
 
   // Group candidates by section
@@ -169,46 +193,72 @@ export default function TeamCandidatesPage() {
           <h2 className="text-lg font-semibold text-gray-900">Add New Candidate</h2>
         </div>
         <div className="p-6">
-          <form onSubmit={addCandidate} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Chest Number</label>
-              <input
-                type="text"
-                value={newCandidate.chestNumber}
-                onChange={(e) => setNewCandidate({...newCandidate, chestNumber: e.target.value})}
-                placeholder="e.g., SMD013"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
+          <form onSubmit={addCandidate} className="space-y-6">
+            {/* Profile Image Upload */}
+            <div className="flex justify-center">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-center">Profile Photo</label>
+                <ImageUpload
+                  currentImage={newCandidate.profileImage || undefined}
+                  onImageChange={(imageData, mimeType, size) => {
+                    setNewCandidate({
+                      ...newCandidate,
+                      profileImage: imageData,
+                      profileImageMimeType: mimeType,
+                      profileImageSize: size
+                    });
+                  }}
+                  name={newCandidate.name || 'New Candidate'}
+                  size="md"
+                  shape="circle"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Candidate Name</label>
-              <input
-                type="text"
-                value={newCandidate.name}
-                onChange={(e) => setNewCandidate({...newCandidate, name: e.target.value})}
-                placeholder="Enter full name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
+
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Chest Number</label>
+                <input
+                  type="text"
+                  value={newCandidate.chestNumber}
+                  onChange={(e) => setNewCandidate({...newCandidate, chestNumber: e.target.value})}
+                  placeholder="e.g., SMD013"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Candidate Name</label>
+                <input
+                  type="text"
+                  value={newCandidate.name}
+                  onChange={(e) => setNewCandidate({...newCandidate, name: e.target.value})}
+                  placeholder="Enter full name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                <select
+                  value={newCandidate.section}
+                  onChange={(e) => setNewCandidate({...newCandidate, section: e.target.value as any})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="senior">Senior</option>
+                  <option value="junior">Junior</option>
+                  <option value="sub-junior">Sub Junior</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Section</label>
-              <select
-                value={newCandidate.section}
-                onChange={(e) => setNewCandidate({...newCandidate, section: e.target.value as any})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="senior">Senior</option>
-                <option value="junior">Junior</option>
-                <option value="sub-junior">Sub Junior</option>
-              </select>
-            </div>
-            <div className="flex items-end">
+
+            {/* Submit Button */}
+            <div className="flex justify-center">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-lg transition-colors font-medium"
               >
                 {submitting ? 'Adding...' : 'Add Candidate'}
               </button>
@@ -239,6 +289,9 @@ export default function TeamCandidatesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Photo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Chest Number
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -258,6 +311,33 @@ export default function TeamCandidatesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {candidates.map((candidate) => (
                 <tr key={candidate._id?.toString()} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {editingId === candidate._id?.toString() ? (
+                      <ImageUpload
+                        currentImage={editCandidate.profileImage || undefined}
+                        onImageChange={(imageData, mimeType, size) => {
+                          setEditCandidate({
+                            ...editCandidate,
+                            profileImage: imageData,
+                            profileImageMimeType: mimeType,
+                            profileImageSize: size
+                          });
+                        }}
+                        name={editCandidate.name || candidate.name}
+                        size="sm"
+                        shape="circle"
+                      />
+                    ) : (
+                      <ImageUpload
+                        currentImage={candidate.profileImage || undefined}
+                        onImageChange={() => {}} // Read-only in view mode
+                        name={candidate.name}
+                        size="sm"
+                        shape="circle"
+                        disabled={true}
+                      />
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {editingId === candidate._id?.toString() ? (
                       <input
