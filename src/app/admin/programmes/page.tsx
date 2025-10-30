@@ -15,6 +15,7 @@ export default function ProgrammesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'manage' | 'registrations'>('manage');
   const [formData, setFormData] = useState({
+    _id: '',
     code: '',
     name: '',
     category: '' as 'arts' | 'sports' | '',
@@ -24,6 +25,7 @@ export default function ProgrammesPage() {
     requiredParticipants: 1,
     maxParticipants: ''
   });
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Filter out blank/empty programmes
   const filterValidProgrammes = (programmes: Programme[]) => {
@@ -74,6 +76,48 @@ export default function ProgrammesPage() {
     fetchData();
   }, []);
 
+  // Load program data into form for editing
+  const handleEditProgramme = (programme: Programme) => {
+    setFormData({
+      _id: programme._id?.toString() || '',
+      code: programme.code || '',
+      name: programme.name || '',
+      category: programme.category as 'arts' | 'sports' | '',
+      subcategory: programme.subcategory as 'stage' | 'non-stage' | '' || '',
+      section: programme.section as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
+      positionType: programme.positionType as 'individual' | 'group' | 'general' | '',
+      requiredParticipants: programme.requiredParticipants || 1,
+      maxParticipants: programme.maxParticipants?.toString() || ''
+    });
+    setIsEditMode(true);
+    // Scroll to form
+    document.getElementById('programme-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      _id: '',
+      code: '',
+      name: '',
+      category: '' as 'arts' | 'sports' | '',
+      subcategory: '' as 'stage' | 'non-stage' | '',
+      section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
+      positionType: '' as 'individual' | 'group' | 'general' | '',
+      requiredParticipants: 1,
+      maxParticipants: ''
+    });
+    setIsEditMode(false);
+  };
+
+  // Check if program code already exists (excluding current program in edit mode)
+  const isProgramCodeExists = (code: string) => {
+    return programmes.some(programme => 
+      programme.code.toLowerCase() === code.toLowerCase() && 
+      (!isEditMode || programme._id?.toString() !== formData._id)
+    );
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,10 +132,22 @@ export default function ProgrammesPage() {
       return;
     }
 
+    // Check for duplicate program code
+    if (isProgramCodeExists(formData.code)) {
+      alert('A program with this code already exists');
+      return;
+    }
+
     try {
       setSubmitting(true);
-      const response = await fetch('/api/programmes', {
-        method: 'POST',
+      const url = isEditMode 
+        ? `/api/programmes?id=${formData._id}`
+        : '/api/programmes';
+      
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -103,26 +159,18 @@ export default function ProgrammesPage() {
 
       if (response.ok) {
         // Reset form
-        setFormData({
-          code: '',
-          name: '',
-          category: '' as 'arts' | 'sports' | '',
-          subcategory: '' as 'stage' | 'non-stage' | '',
-          section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
-          positionType: '' as 'individual' | 'group' | 'general' | '',
-          requiredParticipants: 1,
-          maxParticipants: ''
-        });
-
+        resetForm();
+        
         // Refresh data
         await fetchData();
-        alert('Programme added successfully!');
+        alert(`Programme ${isEditMode ? 'updated' : 'added'} successfully!`);
       } else {
-        alert('Error adding programme');
-      }
+        const error = await response.json();
+        throw new Error(error.error || 'Unknown error');
+      }  
     } catch (error) {
-      console.error('Error adding programme:', error);
-      alert('Error adding programme');
+      console.error('Error updating programme:', error);
+      alert('Error updating programme');
     } finally {
       setSubmitting(false);
     }
@@ -163,10 +211,14 @@ export default function ProgrammesPage() {
 
       if (response.ok) {
         await fetchData(); // Refresh the list
+        // If we were editing the deleted programme, reset the form
+        if (formData._id === programmeId) {
+          resetForm();
+        }
         alert('Programme deleted successfully!');
       } else {
         const error = await response.json();
-        alert(`Error deleting programme: ${error.error || 'Unknown error'}`);
+        throw new Error(error.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Error deleting programme:', error);
@@ -175,6 +227,7 @@ export default function ProgrammesPage() {
       setDeleting(null);
     }
   };
+
   // Get programme registrations with team info
   const getProgrammeRegistrations = () => {
     return programmes.map(programme => {
@@ -222,8 +275,8 @@ export default function ProgrammesPage() {
         {/* Manage Programmes Tab */}
         {activeTab === 'manage' && (
           <>
-            {/* Add New Programme */}
-            <ShowcaseSection title="Add New Programme">
+            {/* Programme Form */}
+            <ShowcaseSection title={isEditMode ? 'Edit Programme' : 'Add New Programme'} id="programme-form">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -347,13 +400,24 @@ export default function ProgrammesPage() {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg transition-colors duration-200"
-                >
-                  {submitting ? 'Adding Programme...' : 'Add Programme'}
-                </button>
+                <div className="mt-6 flex space-x-4">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Saving...' : isEditMode ? 'Update Programme' : 'Add Programme'}
+                  </button>
+                  {isEditMode && (
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </form>
             </ShowcaseSection>
 
@@ -428,13 +492,21 @@ export default function ProgrammesPage() {
                               {programme.status ? programme.status.charAt(0).toUpperCase() + programme.status.slice(1) : 'Unknown'}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
-                            <div className="flex space-x-2">
-                              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex space-x-3">
                               <button
-                                onClick={() => handleDelete(programme._id!.toString(), programme.name)}
+                                onClick={() => handleEditProgramme(programme)}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="Edit programme"
+                              >
+                                Edit
+                              </button>
+                              <span className="text-gray-300">|</span>
+                              <button
+                                onClick={() => handleDelete(programme._id?.toString() || '', programme.name)}
                                 disabled={deleting === programme._id?.toString()}
-                                className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Delete programme"
                               >
                                 {deleting === programme._id?.toString() ? 'Deleting...' : 'Delete'}
                               </button>
