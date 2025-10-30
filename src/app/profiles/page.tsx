@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Candidate, Team, ProgrammeParticipant, Result } from '@/types';
+import { Candidate, Team, Result } from '@/types';
 
 export default function ProfilesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [participants, setParticipants] = useState<ProgrammeParticipant[]>([]);
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,43 +22,47 @@ export default function ProfilesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [candidatesRes, teamsRes, participantsRes, resultsRes] = await Promise.all([
+      const [candidatesRes, teamsRes, resultsRes] = await Promise.all([
         fetch('/api/candidates'),
         fetch('/api/teams'),
-        fetch('/api/programme-participants'),
         fetch('/api/results')
       ]);
 
-      const [candidatesData, teamsData, participantsData, resultsData] = await Promise.all([
+      if (!candidatesRes.ok || !teamsRes.ok || !resultsRes.ok) {
+        throw new Error('Failed to load profiles data');
+      }
+
+      const [candidatesData, teamsData, resultsData] = await Promise.all([
         candidatesRes.json(),
-        participantsRes.json(),
         teamsRes.json(),
         resultsRes.json()
       ]);
 
-      setCandidates(candidatesData || []);
-      setTeams(teamsData || []);
-      setParticipants(participantsData || []);
-      setResults(resultsData || []);
+      setCandidates(Array.isArray(candidatesData) ? candidatesData : []);
+      setTeams(Array.isArray(teamsData) ? teamsData : []);
+      setResults(Array.isArray(resultsData) ? resultsData : []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setCandidates([]);
+      setTeams([]);
+      setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getTeamName = (teamId: string) => {
-    const team = teams.find(t => t._id?.toString() === teamId);
+  const getTeamName = (teamCode: string) => {
+    const team = teams.find(t => t.code === teamCode || t._id?.toString() === teamCode);
     return team?.name || 'Unknown Team';
   };
 
-  const getTeamColor = (teamId: string) => {
-    const team = teams.find(t => t._id?.toString() === teamId);
+  const getTeamColor = (teamCode: string) => {
+    const team = teams.find(t => t.code === teamCode || t._id?.toString() === teamCode);
     switch (team?.name?.toLowerCase()) {
       case 'team sumud': return 'bg-green-100 text-green-800 border-green-200';
-      case 'team aqsa': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'team aqsa': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'team inthifada': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+      default: return 'bg-purple-100 text-purple-800 border-purple-200';
     }
   };
 
@@ -73,32 +76,60 @@ export default function ProfilesPage() {
     }
   };
 
-  const getCandidateParticipations = (candidateId: string) => {
-    return participants.filter(p => 
-      p.participants.some(participant => participant.candidateId === candidateId)
-    );
-  };
-
-  const getCandidateResults = (candidateName: string) => {
-    return results.filter(r => 
-      r.participants?.some(p => p.name?.toLowerCase().includes(candidateName.toLowerCase()))
-    );
+  const getCandidateResults = (candidate: Candidate) => {
+    return results.filter(result => {
+      // Check individual results
+      const individualResults = [
+        ...(result.firstPlace || []),
+        ...(result.secondPlace || []),
+        ...(result.thirdPlace || [])
+      ];
+      
+      return individualResults.some(winner => 
+        winner.chestNumber === candidate.chestNumber
+      );
+    });
   };
 
   const getCandidateTotalPoints = (candidate: Candidate) => {
-    const candidateResults = getCandidateResults(candidate.name);
-    return candidateResults.reduce((total, result) => {
-      const participant = result.participants?.find(p => 
-        p.name?.toLowerCase().includes(candidate.name.toLowerCase())
+    let totalPoints = 0;
+    
+    results.forEach(result => {
+      // Check first place
+      if (result.firstPlace?.some(winner => winner.chestNumber === candidate.chestNumber)) {
+        totalPoints += result.firstPoints || 5;
+      }
+      // Check second place
+      else if (result.secondPlace?.some(winner => winner.chestNumber === candidate.chestNumber)) {
+        totalPoints += result.secondPoints || 3;
+      }
+      // Check third place
+      else if (result.thirdPlace?.some(winner => winner.chestNumber === candidate.chestNumber)) {
+        totalPoints += result.thirdPoints || 1;
+      }
+    });
+    
+    return totalPoints;
+  };
+
+  const getCandidateWins = (candidate: Candidate) => {
+    return results.filter(result => {
+      const individualResults = [
+        ...(result.firstPlace || []),
+        ...(result.secondPlace || []),
+        ...(result.thirdPlace || [])
+      ];
+      
+      return individualResults.some(winner => 
+        winner.chestNumber === candidate.chestNumber
       );
-      return total + (participant?.points || 0);
-    }, 0);
+    }).length;
   };
 
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          candidate.chestNumber?.toString().includes(searchTerm);
-    const matchesTeam = selectedTeam === 'all' || candidate.teamId === selectedTeam;
+    const matchesTeam = selectedTeam === 'all' || candidate.team === selectedTeam;
     const matchesSection = selectedSection === 'all' || candidate.section === selectedSection;
     
     return matchesSearch && matchesTeam && matchesSection;
@@ -109,7 +140,7 @@ export default function ProfilesPage() {
       case 'name':
         return a.name.localeCompare(b.name);
       case 'team':
-        return getTeamName(a.teamId).localeCompare(getTeamName(b.teamId));
+        return getTeamName(a.team).localeCompare(getTeamName(b.team));
       case 'section':
         return (a.section || '').localeCompare(b.section || '');
       case 'points':
@@ -191,7 +222,7 @@ export default function ProfilesPage() {
             >
               <option value="all">All Teams</option>
               {teams.map((team) => (
-                <option key={team._id?.toString()} value={team._id?.toString()}>
+                <option key={team.code} value={team.code}>
                   {team.name}
                 </option>
               ))}
@@ -222,14 +253,15 @@ export default function ProfilesPage() {
         {/* Profiles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedCandidates.map((candidate) => {
-            const participations = getCandidateParticipations(candidate._id?.toString() || '');
+            const candidateResults = getCandidateResults(candidate);
             const totalPoints = getCandidateTotalPoints(candidate);
-            const teamName = getTeamName(candidate.teamId);
+            const totalWins = getCandidateWins(candidate);
+            const teamName = getTeamName(candidate.team);
             
             return (
               <Link
-                key={candidate._id?.toString()}
-                href={`/profiles/${candidate._id}`}
+                key={candidate._id?.toString() || candidate.chestNumber}
+                href={`/profiles/${candidate._id || candidate.chestNumber}`}
                 className="block group"
               >
                 <div className="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden">
@@ -255,7 +287,7 @@ export default function ProfilesPage() {
                   {/* Profile Content */}
                   <div className="p-4">
                     <div className="flex flex-wrap gap-2 mb-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getTeamColor(candidate.teamId)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getTeamColor(candidate.team)}`}>
                         {teamName}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSectionColor(candidate.section)}`}>
@@ -265,8 +297,8 @@ export default function ProfilesPage() {
 
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <div className="text-lg font-bold text-blue-600">{participations.length}</div>
-                        <div className="text-xs text-gray-500">Events</div>
+                        <div className="text-lg font-bold text-blue-600">{totalWins}</div>
+                        <div className="text-xs text-gray-500">Wins</div>
                       </div>
                       <div>
                         <div className="text-lg font-bold text-green-600">{totalPoints}</div>
@@ -274,7 +306,7 @@ export default function ProfilesPage() {
                       </div>
                       <div>
                         <div className="text-lg font-bold text-purple-600">
-                          {getCandidateResults(candidate.name).length}
+                          {candidateResults.length}
                         </div>
                         <div className="text-xs text-gray-500">Results</div>
                       </div>
@@ -285,7 +317,7 @@ export default function ProfilesPage() {
                       <div className="flex justify-between text-sm text-gray-600">
                         <span>Performance</span>
                         <span className="font-medium">
-                          {totalPoints > 0 ? `${Math.round(totalPoints / Math.max(participations.length, 1))} avg` : 'No data'}
+                          {totalWins > 0 ? `${Math.round(totalPoints / totalWins)} avg` : 'No data'}
                         </span>
                       </div>
                     </div>

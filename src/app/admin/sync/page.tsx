@@ -211,10 +211,10 @@ export default function SyncPage() {
             <h3 className="font-bold text-yellow-800 mb-3">📋 Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-2 text-yellow-700">
               <li>Open your Google Spreadsheet: <a href="https://docs.google.com/spreadsheets/d/19Ug-K85q4u3yNmF0MDgC8D4lOkSRs_-MVR-CbzV2rzA/edit" target="_blank" className="text-blue-600 underline">Click here</a></li>
-              <li>Click the "Share" button (top right corner)</li>
+              <li>Click the &quot;Share&quot; button (top right corner)</li>
               <li>Add your service account email (from your .env.local file)</li>
-              <li>Set permission to "Editor"</li>
-              <li>Click "Send"</li>
+              <li>Set permission to &quot;Editor&quot;</li>
+              <li>Click &quot;Send&quot;</li>
               <li>Come back here and test the sync!</li>
             </ol>
           </div>

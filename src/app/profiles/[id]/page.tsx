@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Candidate, Team, ProgrammeParticipant, Result, Programme } from '@/types';
+import { Candidate, Team, Result, Programme } from '@/types';
 
 export default function ProfileDetailPage() {
   const params = useParams();
@@ -12,7 +12,7 @@ export default function ProfileDetailPage() {
 
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [team, setTeam] = useState<Team | null>(null);
-  const [participations, setParticipations] = useState<ProgrammeParticipant[]>([]);
+
   const [results, setResults] = useState<Result[]>([]);
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,23 +27,24 @@ export default function ProfileDetailPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [candidatesRes, teamsRes, participantsRes, resultsRes, programmesRes] = await Promise.all([
+      const [candidatesRes, teamsRes, resultsRes, programmesRes] = await Promise.all([
         fetch('/api/candidates'),
         fetch('/api/teams'),
-        fetch('/api/programme-participants'),
         fetch('/api/results'),
         fetch('/api/programmes')
       ]);
 
-      const [candidatesData, teamsData, participantsData, resultsData, programmesData] = await Promise.all([
+      const [candidatesData, teamsData, resultsData, programmesData] = await Promise.all([
         candidatesRes.json(),
         teamsRes.json(),
-        participantsRes.json(),
         resultsRes.json(),
         programmesRes.json()
       ]);
 
-      const foundCandidate = candidatesData.find((c: Candidate) => c._id?.toString() === candidateId);
+      const foundCandidate = candidatesData.find((c: Candidate) => 
+        c._id?.toString() === candidateId || c.chestNumber === candidateId
+      );
+      
       if (!foundCandidate) {
         router.push('/profiles');
         return;
@@ -51,19 +52,23 @@ export default function ProfileDetailPage() {
 
       setCandidate(foundCandidate);
       
-      const candidateTeam = teamsData.find((t: Team) => t._id?.toString() === foundCandidate.teamId);
+      const candidateTeam = teamsData.find((t: Team) => t.code === foundCandidate.team);
       setTeam(candidateTeam);
 
-      const candidateParticipations = participantsData.filter((p: ProgrammeParticipant) =>
-        p.participants.some(participant => participant.candidateId === candidateId)
-      );
-      setParticipations(candidateParticipations);
-
-      const candidateResults = resultsData.filter((r: Result) =>
-        r.participants?.some(p => p.name?.toLowerCase().includes(foundCandidate.name.toLowerCase()))
-      );
+      // Filter results where this candidate participated
+      const candidateResults = resultsData.filter((result: Result) => {
+        const individualResults = [
+          ...(result.firstPlace || []),
+          ...(result.secondPlace || []),
+          ...(result.thirdPlace || [])
+        ];
+        
+        return individualResults.some(winner => 
+          winner.chestNumber === foundCandidate.chestNumber
+        );
+      });
+      
       setResults(candidateResults);
-
       setProgrammes(programmesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -119,38 +124,51 @@ export default function ProfileDetailPage() {
   };
 
   const getTotalPoints = () => {
-    return results.reduce((total, result) => {
-      const participant = result.participants?.find(p => 
-        p.name?.toLowerCase().includes(candidate?.name.toLowerCase() || '')
-      );
-      return total + (participant?.points || 0);
-    }, 0);
+    let totalPoints = 0;
+    
+    results.forEach(result => {
+      // Check first place
+      if (result.firstPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+        totalPoints += result.firstPoints || 5;
+      }
+      // Check second place
+      else if (result.secondPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+        totalPoints += result.secondPoints || 3;
+      }
+      // Check third place
+      else if (result.thirdPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+        totalPoints += result.thirdPoints || 1;
+      }
+    });
+    
+    return totalPoints;
   };
 
   const getPositionStats = () => {
-    const positions = results.map(result => {
-      const participant = result.participants?.find(p => 
-        p.name?.toLowerCase().includes(candidate?.name.toLowerCase() || '')
-      );
-      return participant?.position;
-    }).filter(Boolean);
+    let first = 0, second = 0, third = 0;
+    
+    results.forEach(result => {
+      if (result.firstPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+        first++;
+      } else if (result.secondPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+        second++;
+      } else if (result.thirdPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+        third++;
+      }
+    });
 
-    const first = positions.filter(p => p === 1).length;
-    const second = positions.filter(p => p === 2).length;
-    const third = positions.filter(p => p === 3).length;
-
-    return { first, second, third, total: positions.length };
+    return { first, second, third, total: first + second + third };
   };
 
   const getPerformanceRating = () => {
     const totalPoints = getTotalPoints();
-    const totalEvents = participations.length;
-    if (totalEvents === 0) return 'No Data';
+    const totalResults = results.length;
+    if (totalResults === 0) return 'No Data';
     
-    const avgPoints = totalPoints / totalEvents;
-    if (avgPoints >= 8) return 'Excellent';
-    if (avgPoints >= 6) return 'Good';
-    if (avgPoints >= 4) return 'Average';
+    const avgPoints = totalPoints / totalResults;
+    if (avgPoints >= 4) return 'Excellent';
+    if (avgPoints >= 3) return 'Good';
+    if (avgPoints >= 2) return 'Average';
     return 'Needs Improvement';
   };
 
@@ -236,7 +254,7 @@ export default function ProfileDetailPage() {
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{participations.length}</div>
+                  <div className="text-2xl font-bold">{results.length}</div>
                   <div className="text-sm opacity-90">Events</div>
                 </div>
                 <div className="text-center">
@@ -333,8 +351,8 @@ export default function ProfileDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Events Joined:</span>
-                    <span className="font-bold">{participations.length}</span>
+                    <span className="text-gray-600">Events Participated:</span>
+                    <span className="font-bold">{results.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Results Recorded:</span>
@@ -343,7 +361,7 @@ export default function ProfileDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Avg Points:</span>
                     <span className="font-bold">
-                      {participations.length > 0 ? (totalPoints / participations.length).toFixed(1) : '0'}
+                      {results.length > 0 ? (totalPoints / results.length).toFixed(1) : '0'}
                     </span>
                   </div>
                 </div>
@@ -359,20 +377,35 @@ export default function ProfileDetailPage() {
                 {results.length > 0 ? (
                   <div className="space-y-4">
                     {results.slice(0, 5).map((result, index) => {
-                      const participant = result.participants?.find(p => 
-                        p.name?.toLowerCase().includes(candidate.name.toLowerCase())
-                      );
+                      const programme = programmes.find(p => p._id === result.programmeId || p.id === result.programmeId);
+                      const programmeName = programme?.name || 'Unknown Programme';
+                      
+                      // Determine position and points
+                      let position = 0;
+                      let points = 0;
+                      
+                      if (result.firstPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+                        position = 1;
+                        points = result.firstPoints || 5;
+                      } else if (result.secondPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+                        position = 2;
+                        points = result.secondPoints || 3;
+                      } else if (result.thirdPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+                        position = 3;
+                        points = result.thirdPoints || 1;
+                      }
+                      
                       return (
                         <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <span className="text-2xl">🏆</span>
                             <div>
-                              <h4 className="font-semibold text-gray-900">{result.programme}</h4>
-                              <p className="text-sm text-gray-600">Position: #{participant?.position}</p>
+                              <h4 className="font-semibold text-gray-900">{programmeName}</h4>
+                              <p className="text-sm text-gray-600">Position: #{position}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-indigo-600">{participant?.points} pts</div>
+                            <div className="text-lg font-bold text-indigo-600">{points} pts</div>
                             <div className="text-sm text-gray-500">
                               {new Date(result.createdAt || '').toLocaleDateString()}
                             </div>
@@ -397,29 +430,29 @@ export default function ProfileDetailPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-                <h2 className="text-2xl font-bold text-white">Programme Participations</h2>
-                <p className="text-blue-100">All events this participant has registered for</p>
+                <h2 className="text-2xl font-bold text-white">Event Participations</h2>
+                <p className="text-blue-100">All events this participant has competed in</p>
               </div>
               <div className="p-6">
-                {participations.length > 0 ? (
+                {results.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {participations.map((participation, index) => {
-                      const programmeName = getProgrammeName(participation.programmeId);
-                      const category = getProgrammeCategory(participation.programmeId);
-                      const participant = participation.participants.find(p => p.candidateId === candidateId);
+                    {results.map((result, index) => {
+                      const programme = programmes.find(p => p._id === result.programmeId || p.id === result.programmeId);
+                      const programmeName = programme?.name || 'Unknown Programme';
+                      const category = programme?.category || 'general';
                       
                       return (
                         <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-2xl">{getCategoryIcon(category)}</span>
                             <span className="text-xs text-gray-500">
-                              {new Date(participation.createdAt || '').toLocaleDateString()}
+                              {new Date(result.createdAt || '').toLocaleDateString()}
                             </span>
                           </div>
                           <h4 className="font-semibold text-gray-900 mb-2">{programmeName}</h4>
                           <div className="text-sm text-gray-600">
                             <p>Team: {team?.name}</p>
-                            <p>Role: {participant?.role || 'Participant'}</p>
+                            <p>Category: {category}</p>
                           </div>
                         </div>
                       );
@@ -448,9 +481,23 @@ export default function ProfileDetailPage() {
                 {results.length > 0 ? (
                   <div className="space-y-4">
                     {results.map((result, index) => {
-                      const participant = result.participants?.find(p => 
-                        p.name?.toLowerCase().includes(candidate.name.toLowerCase())
-                      );
+                      const programme = programmes.find(p => p._id === result.programmeId || p.id === result.programmeId);
+                      const programmeName = programme?.name || 'Unknown Programme';
+                      
+                      // Determine position and points
+                      let position = 0;
+                      let points = 0;
+                      
+                      if (result.firstPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+                        position = 1;
+                        points = result.firstPoints || 5;
+                      } else if (result.secondPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+                        position = 2;
+                        points = result.secondPoints || 3;
+                      } else if (result.thirdPlace?.some(winner => winner.chestNumber === candidate?.chestNumber)) {
+                        position = 3;
+                        points = result.thirdPoints || 1;
+                      }
                       
                       const getPositionColor = (position: number) => {
                         if (position === 1) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -469,26 +516,28 @@ export default function ProfileDetailPage() {
                       return (
                         <div key={index} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-xl font-semibold text-gray-900">{result.programme}</h4>
+                            <h4 className="text-xl font-semibold text-gray-900">{programmeName}</h4>
                             <div className="flex items-center space-x-2">
-                              <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPositionColor(participant?.position || 0)}`}>
-                                {getPositionIcon(participant?.position || 0)} Position #{participant?.position}
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPositionColor(position)}`}>
+                                {getPositionIcon(position)} Position #{position}
                               </span>
                             </div>
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="text-center p-4 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-indigo-600">{participant?.points || 0}</div>
+                              <div className="text-2xl font-bold text-indigo-600">{points}</div>
                               <div className="text-sm text-gray-600">Points Earned</div>
                             </div>
                             <div className="text-center p-4 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-green-600">#{participant?.position || 'N/A'}</div>
+                              <div className="text-2xl font-bold text-green-600">#{position}</div>
                               <div className="text-sm text-gray-600">Final Position</div>
                             </div>
                             <div className="text-center p-4 bg-gray-50 rounded-lg">
-                              <div className="text-2xl font-bold text-purple-600">{result.participants?.length || 0}</div>
-                              <div className="text-sm text-gray-600">Total Participants</div>
+                              <div className="text-2xl font-bold text-purple-600">
+                                {(result.firstPlace?.length || 0) + (result.secondPlace?.length || 0) + (result.thirdPlace?.length || 0)}
+                              </div>
+                              <div className="text-sm text-gray-600">Total Winners</div>
                             </div>
                           </div>
 
@@ -560,12 +609,12 @@ export default function ProfileDetailPage() {
               <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">🌟 Milestones</h3>
                 <div className="space-y-3">
-                  <div className={`p-3 rounded-lg ${participations.length >= 5 ? 'bg-green-50 text-green-800' : 'bg-gray-50 text-gray-600'}`}>
+                  <div className={`p-3 rounded-lg ${results.length >= 5 ? 'bg-green-50 text-green-800' : 'bg-gray-50 text-gray-600'}`}>
                     <div className="flex items-center justify-between">
                       <span>Active Participant</span>
-                      <span>{participations.length >= 5 ? '✅' : '⏳'}</span>
+                      <span>{results.length >= 5 ? '✅' : '⏳'}</span>
                     </div>
-                    <div className="text-sm opacity-75">Join 5+ events ({participations.length}/5)</div>
+                    <div className="text-sm opacity-75">Participate in 5+ events ({results.length}/5)</div>
                   </div>
                   
                   <div className={`p-3 rounded-lg ${positionStats.first >= 1 ? 'bg-green-50 text-green-800' : 'bg-gray-50 text-gray-600'}`}>
