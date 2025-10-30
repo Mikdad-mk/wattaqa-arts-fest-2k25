@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function Footer() {
   return (
     <footer className="bg-gray-900 py-16">
@@ -9,9 +11,13 @@ export function Footer() {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <div className="w-4 h-4 bg-gray-900 rounded-full"></div>
-              </div>
+              <Image
+                src="/images/festival-logo.png"
+                alt="Festival 2K25"
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
               <span className="font-bold text-xl text-white">Festival 2K25</span>
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
@@ -31,7 +37,9 @@ export function Footer() {
               <li><a href="#about" className="text-gray-400 hover:text-white transition-colors">About Festival</a></li>
               <li><a href="#lineup" className="text-gray-400 hover:text-white transition-colors">Teams</a></li>
               <li><a href="#schedule" className="text-gray-400 hover:text-white transition-colors">Schedule</a></li>
-              <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/programmes" className="text-gray-400 hover:text-white transition-colors">Programmes</a></li>
+              <li><a href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">Leaderboard</a></li>
+              <li><a href="/results" className="text-gray-400 hover:text-white transition-colors">Results</a></li>
             </ul>
           </div>
           

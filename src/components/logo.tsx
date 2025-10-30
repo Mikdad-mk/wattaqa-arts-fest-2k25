@@ -1,9 +1,15 @@
+import Image from "next/image";
+
 export function Logo() {
   return (
     <div className="flex items-center space-x-2">
-      <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-        <div className="w-4 h-4 bg-white rounded-full"></div>
-      </div>
+      <Image
+        src="/images/festival-logo.png"
+        alt="Festival 2K25"
+        width={32}
+        height={32}
+        className="rounded-full"
+      />
       <span className="font-bold text-lg text-gray-900 dark:text-white">Festival 2K25</span>
     </div>
   );

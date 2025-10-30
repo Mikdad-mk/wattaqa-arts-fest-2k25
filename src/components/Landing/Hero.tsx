@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -12,23 +13,28 @@ export function Hero() {
       {/* Navigation */}
       <nav className="flex items-center justify-between px-8 py-6 max-w-6xl mx-auto w-full">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-full"></div>
-          </div>
-          <span className="font-bold text-xl">Festival 2K25</span>
+          <Image
+            src="/images/festival-logo.png"
+            alt="Festival 2K25"
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+          <span className="font-bold text-xl">Wattaqa 2K25</span>
         </div>
 
         <div className="hidden md:flex items-center space-x-8 text-gray-500">
           <a href="#about" className="hover:text-gray-900 transition-colors">About</a>
           <a href="#lineup" className="hover:text-gray-900 transition-colors">Teams</a>
           <a href="#schedule" className="hover:text-gray-900 transition-colors">Schedule</a>
-          <a href="#tickets" className="hover:text-gray-900 transition-colors">Register</a>
-          <a href="#contact" className="hover:text-gray-900 transition-colors">Contact</a>
+          <Link href="/programmes" className="hover:text-gray-900 transition-colors">Programmes</Link>
+          <Link href="/leaderboard" className="hover:text-gray-900 transition-colors">Leaderboard</Link>
+          <Link href="/results" className="hover:text-gray-900 transition-colors">Results</Link>
         </div>
 
-        <button className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors">
-          Join Festival
-        </button>
+        <Link href="/login" className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors">
+          Login
+        </Link>
       </nav>
 
       {/* Hero Section - Full Screen Height */}
@@ -66,17 +72,13 @@ export function Hero() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
-          <button className="bg-black text-white px-8 py-4 rounded-full flex items-center gap-2 hover:bg-gray-800 transition-colors text-lg">
-            <span>Watch Highlights</span>
-            <span className="text-yellow-400">⚡</span>
-          </button>
-          <a href="/leaderboard" className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-4 rounded-full flex items-center gap-2 hover:from-purple-700 hover:to-purple-800 transition-all text-lg shadow-lg hover:shadow-xl transform hover:scale-105">
+          <Link href="/results" className="bg-black text-white px-8 py-4 rounded-full flex items-center gap-2 hover:bg-gray-800 transition-colors text-lg">
             <span>🏆</span>
-            <span>View Leaderboard</span>
-          </a>
-          <button className="text-gray-500 hover:text-gray-900 transition-colors text-lg">
-            View Schedule
-          </button>
+            <span>View Results</span>
+          </Link>
+          <Link href="/leaderboard" className="text-gray-500 hover:text-gray-900 transition-colors text-lg">
+            View Leaderboard
+          </Link>
         </div>
         {/* Three Animated Image Containers */}
         <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-5xl mx-auto">
@@ -110,36 +112,34 @@ export function Hero() {
             <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
           </div>
 
-          {/* Blue container - Team Aqsa (taller) */}
-          <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-3xl w-full md:w-80 h-96 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 animate-fade-in-up group"
+          {/* Gray container - Team Aqsa (taller) */}
+          <div className="bg-gradient-to-br from-gray-600 to-gray-700 rounded-3xl w-full md:w-80 h-96 relative overflow-hidden cursor-pointer transform transition-transform duration-500 ease-out hover:scale-105 animate-fade-in-up group"
             style={{ animationDelay: '0.4s' }}>
 
             {/* Floating animation background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-300/20 to-cyan-600/20 animate-pulse"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-500/20 to-gray-600/20 animate-pulse"></div>
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {/* Team Image - Front and Center */}
+            <div className="absolute inset-0 opacity-80">
+              <Image
+                src="/images/teams/AL AQSA TEAM.png"
+                alt="Team Aqsa"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+
+            {/* Gray overlay for team color identity */}
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-700/50 via-gray-600/15 to-transparent"></div>
 
             {/* Content */}
-            <div className="text-white text-center relative z-10 group-hover:text-white transition-colors duration-300">
-              <div className="w-20 h-20 mx-auto mb-3 border-2 border-white/30 rounded-xl flex items-center justify-center group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
-                <Image
-                  src="/images/coconut-tree-svgrepo-com.svg"
-                  alt="Team Aqsa"
-                  width={40}
-                  height={40}
-                  className="group-hover:scale-110 transition-transform duration-300 filter brightness-0 invert"
-                />
-              </div>
-              <h3 className="text-lg font-bold mb-1">Team Aqsa</h3>
-              <p className="text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-300">Creative & Athletic Champions</p>
+            <div className="absolute bottom-6 left-6 right-6 text-white text-center relative z-10">
+              <h3 className="text-lg font-bold mb-1 drop-shadow-lg">Team Aqsa</h3>
+              <p className="text-sm opacity-90 drop-shadow-md">Creative & Athletic Champions</p>
             </div>
 
             {/* Animated border */}
-            <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
-
-            {/* Special glow effect for center box */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 animate-shimmer transition-opacity duration-500"></div>
+            <div className="absolute inset-0 rounded-3xl border-2 border-white/20"></div>
           </div>
           {/* Red container - Team Inthifada */}
           <div className="bg-gradient-to-br from-red-400 to-rose-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 animate-fade-in-up group"

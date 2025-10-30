@@ -2,6 +2,7 @@
 
 import { SearchIcon } from "@/assets/icons";
 import Link from "next/link";
+import Image from "next/image";
 import { useSidebarContext } from "../sidebar/sidebar-context";
 import { MenuIcon } from "./icons";
 import { Notification } from "./notification";
@@ -33,9 +34,13 @@ export function Header() {
 
           {/* Festival Logo & Title */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-5 h-5 bg-white rounded-full"></div>
-            </div>
+            <Image
+              src="/images/festival-logo.png"
+              alt="Festival 2K25"
+              width={40}
+              height={40}
+              className="rounded-full shadow-lg"
+            />
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-gray-900">
                 WATTAQA 2K25

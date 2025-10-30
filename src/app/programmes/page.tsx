@@ -1,10 +1,8 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Programme, ProgrammeParticipant, Team, Candidate, Result } from '@/types';
-import { PublicNavbar } from '@/components/Navigation/PublicNavbar';
-import { PublicFooter } from '@/components/Navigation/PublicFooter';
 
 export default function ProgrammesPage() {
   const [programmes, setProgrammes] = useState<Programme[]>([]);
@@ -13,11 +11,11 @@ export default function ProgrammesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<'overview' | 'programmes' | 'categories' | 'sections'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'arts' | 'sports'>('all');
   const [selectedSection, setSelectedSection] = useState<'all' | 'senior' | 'junior' | 'sub-junior' | 'general'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'upcoming' | 'completed' | 'active'>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchData();
@@ -47,6 +45,7 @@ export default function ProgrammesPage() {
       setTeams(teamsData || []);
       setCandidates(candidatesData || []);
       setResults(resultsData || []);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -135,312 +134,421 @@ export default function ProgrammesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading programmes...</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-xl">Loading programmes...</p>
         </div>
       </div>
     );
   }
 
+  const categories = [...new Set(programmes.map(p => p.category))].filter(Boolean);
+  const sections = [...new Set(programmes.map(p => p.section))].filter(Boolean);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <PublicNavbar />
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)`,
+        backgroundSize: '40px 40px'
+      }}>
+      {/* Hero Header Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">🏆 Festival Programmes</h1>
-            <p className="text-lg text-gray-600">Wattaqa Arts Festival 2K25 - All Competitions</p>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white bg-opacity-20 rounded-full mb-6">
+              <span className="text-white text-2xl">🎭</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Festival Programmes
+            </h1>
+            <p className="text-xl text-blue-100 mb-6 max-w-3xl mx-auto">
+              Explore all competitions and events in the Wattaqa Arts & Sports Festival 2K25
+            </p>
+            <div className="flex items-center justify-center space-x-4 text-blue-200">
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                Live Updates
+              </span>
+              <span>•</span>
+              <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Statistics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">{programmes.length}</div>
-            <div className="text-sm text-gray-600">Total Programmes</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600">
-              {programmes.filter(p => p.category === 'arts').length}
-            </div>
-            <div className="text-sm text-gray-600">Arts Programmes</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
-            <div className="text-3xl font-bold text-green-600">
-              {programmes.filter(p => p.category === 'sports').length}
-            </div>
-            <div className="text-sm text-gray-600">Sports Programmes</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
-            <div className="text-3xl font-bold text-orange-600">
-              {programmes.filter(p => getProgrammeStatus(p) === 'completed').length}
-            </div>
-            <div className="text-sm text-gray-600">Completed</div>
+      {/* Navigation Tabs */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+          <div className="flex flex-wrap border-b">
+            {[
+              { key: 'overview', label: '📊 Overview', icon: '📊' },
+              { key: 'programmes', label: '🎭 All Programmes', icon: '🎭' },
+              { key: 'categories', label: '📂 By Category', icon: '📂' },
+              { key: 'sections', label: '🏛️ By Section', icon: '🏛️' }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-6 py-4 font-medium text-sm md:text-base transition-colors duration-200 ${
+                  activeTab === tab.key
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="hidden md:inline">{tab.label}</span>
+                <span className="md:hidden">{tab.icon}</span>
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            {/* Search */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search programmes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="all">All Categories</option>
-                <option value="arts">🎭 Arts</option>
-                <option value="sports">⚽ Sports</option>
-              </select>
-
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="all">All Sections</option>
-                <option value="senior">Senior</option>
-                <option value="junior">Junior</option>
-                <option value="sub-junior">Sub Junior</option>
-                <option value="general">General</option>
-              </select>
-
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="all">All Status</option>
-                <option value="upcoming">⏰ Upcoming</option>
-                <option value="active">🔄 Active</option>
-                <option value="completed">✅ Completed</option>
-              </select>
-
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`px-3 py-2 text-sm ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                >
-                  📊 Grid
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                >
-                  📋 List
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Count */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            Showing {filteredProgrammes.length} of {programmes.length} programmes
-            {searchTerm && ` for "${searchTerm}"`}
-          </p>
-        </div>
-
-        {/* Programmes Display */}
-        {filteredProgrammes.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No Programmes Found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProgrammes.map((programme) => {
-              const programmeParticipants = getProgrammeParticipants(programme._id?.toString() || '');
-              const programmeResults = getProgrammeResults(programme.name);
-              const status = getProgrammeStatus(programme);
-              const totalParticipants = programmeParticipants.reduce((sum, p) => sum + p.participants.length, 0);
-              
-              return (
-                <Link
-                  key={programme._id?.toString()}
-                  href={`/programmes/${programme._id}`}
-                  className="block group"
-                >
-                  <div className="bg-white rounded-xl shadow-sm border hover:shadow-lg transition-all duration-300 overflow-hidden group-hover:scale-105">
-                    {/* Card Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{getCategoryIcon(programme.category)}</span>
-                          <div>
-                            <h3 className="font-bold text-lg group-hover:text-blue-100 transition-colors">
-                              {programme.name}
-                            </h3>
-                            <p className="text-blue-100 text-sm font-mono">{programme.code}</p>
-                          </div>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
-                          {getStatusIcon(status)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="p-6">
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(programme.category)}`}>
-                          {programme.category.toUpperCase()}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSectionColor(programme.section)}`}>
-                          {programme.section.toUpperCase()}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                          {getPositionTypeIcon(programme.positionType)} {programme.positionType.toUpperCase()}
-                        </span>
-                      </div>
-
-                      {/* Statistics */}
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-blue-600">{programmeParticipants.length}</div>
-                          <div className="text-xs text-gray-500">Teams</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-green-600">{totalParticipants}</div>
-                          <div className="text-xs text-gray-500">Participants</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-purple-600">{programme.requiredParticipants}</div>
-                          <div className="text-xs text-gray-500">Required</div>
-                        </div>
-                      </div>
-
-                      {/* Additional Info */}
-                      {programme.subcategory && (
-                        <div className="mb-3">
-                          <span className="text-xs text-gray-500">Subcategory: </span>
-                          <span className="text-sm font-medium text-gray-700 capitalize">{programme.subcategory}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Footer */}
-                    <div className="bg-gray-50 px-6 py-3 border-t">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">
-                          {programmeResults.length > 0 ? 'Results Available' : 'View Details'}
-                        </span>
-                        <span className="text-blue-600 group-hover:text-blue-800">→</span>
-                      </div>
-                    </div>
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-white text-xl">🎭</span>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          /* List View */
-          <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Programme</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Category</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Section</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Type</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Teams</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Participants</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Status</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredProgrammes.map((programme) => {
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{programmes.length}</div>
+                    <div className="text-sm text-gray-500">Total Programmes</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-white text-xl">🎨</span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {programmes.filter(p => p.category === 'arts').length}
+                    </div>
+                    <div className="text-sm text-gray-500">Arts Programmes</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-white text-xl">⚽</span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {programmes.filter(p => p.category === 'sports').length}
+                    </div>
+                    <div className="text-sm text-gray-500">Sports Programmes</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-white text-xl">✅</span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {programmes.filter(p => getProgrammeStatus(p) === 'completed').length}
+                    </div>
+                    <div className="text-sm text-gray-500">Completed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Featured Programmes */}
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+                <h2 className="text-2xl font-bold text-white">🌟 Featured Programmes</h2>
+                <p className="text-blue-100">Popular competitions and events</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {programmes.slice(0, 6).map((programme) => {
                     const programmeParticipants = getProgrammeParticipants(programme._id?.toString() || '');
-                    const programmeResults = getProgrammeResults(programme.name);
                     const status = getProgrammeStatus(programme);
                     const totalParticipants = programmeParticipants.reduce((sum, p) => sum + p.participants.length, 0);
                     
                     return (
-                      <tr key={programme._id?.toString()} className="hover:bg-gray-50">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center space-x-3">
-                            <span className="text-xl">{getCategoryIcon(programme.category)}</span>
-                            <div>
-                              <div className="font-medium text-gray-900">{programme.name}</div>
-                              <div className="text-sm text-gray-500 font-mono">{programme.code}</div>
+                      <Link
+                        key={programme._id?.toString()}
+                        href={`/programmes/${programme._id}`}
+                        className="block group"
+                      >
+                        <div className="border rounded-lg p-4 hover:shadow-md transition-all duration-200 group-hover:border-blue-300">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xl">{getCategoryIcon(programme.category)}</span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(programme.category)}`}>
+                                {programme.category}
+                              </span>
                             </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                              {getStatusIcon(status)}
+                            </span>
                           </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(programme.category)}`}>
-                            {programme.category}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSectionColor(programme.section)}`}>
-                            {programme.section}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm text-gray-700 capitalize">
-                            {getPositionTypeIcon(programme.positionType)} {programme.positionType}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm font-medium text-blue-600">{programmeParticipants.length}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm font-medium text-green-600">{totalParticipants}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
-                            {getStatusIcon(status)} {status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <Link
-                            href={`/programmes/${programme._id}`}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            View Details →
-                          </Link>
-                        </td>
-                      </tr>
+                          
+                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                            {programme.name}
+                          </h3>
+                          
+                          <div className="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>{programme.section}</span>
+                            <span>{programme.positionType}</span>
+                          </div>
+                          
+                          <div className="flex justify-between text-sm">
+                            <span className="text-blue-600 font-medium">{programmeParticipants.length} teams</span>
+                            <span className="text-green-600 font-medium">{totalParticipants} participants</span>
+                          </div>
+                        </div>
+                      </Link>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           </div>
         )}
+
+        {/* All Programmes Tab */}
+        {activeTab === 'programmes' && (
+          <div className="space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search programmes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value as any)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map((category, idx) => (
+                    <option key={idx} value={category}>{category}</option>
+                  ))}
+                </select>
+                <select
+                  value={selectedSection}
+                  onChange={(e) => setSelectedSection(e.target.value as any)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Sections</option>
+                  {sections.map((section, idx) => (
+                    <option key={idx} value={section}>{section}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Programmes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProgrammes.map((programme) => {
+                const programmeParticipants = getProgrammeParticipants(programme._id?.toString() || '');
+                const status = getProgrammeStatus(programme);
+                const totalParticipants = programmeParticipants.reduce((sum, p) => sum + p.participants.length, 0);
+                
+                return (
+                  <Link
+                    key={programme._id?.toString()}
+                    href={`/programmes/${programme._id}`}
+                    className="block group"
+                  >
+                    <div className="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden">
+                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xl">{getCategoryIcon(programme.category)}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                            {getStatusIcon(status)}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-lg group-hover:text-blue-100 transition-colors">
+                          {programme.name}
+                        </h3>
+                        <p className="text-blue-100 text-sm">{programme.code}</p>
+                      </div>
+
+                      <div className="p-4">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(programme.category)}`}>
+                            {programme.category}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSectionColor(programme.section)}`}>
+                            {programme.section}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <div className="text-lg font-bold text-blue-600">{programmeParticipants.length}</div>
+                            <div className="text-xs text-gray-500">Teams</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-bold text-green-600">{totalParticipants}</div>
+                            <div className="text-xs text-gray-500">Participants</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-bold text-purple-600">{programme.requiredParticipants}</div>
+                            <div className="text-xs text-gray-500">Required</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="space-y-6">
+            {categories.map((category, categoryIndex) => (
+              <div key={categoryIndex} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <div className={`px-6 py-4 ${category === 'arts' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-green-600 to-emerald-600'}`}>
+                  <h2 className="text-2xl font-bold text-white">
+                    {getCategoryIcon(category)} {category.charAt(0).toUpperCase() + category.slice(1)} Programmes
+                  </h2>
+                  <p className="text-white opacity-90">
+                    {programmes.filter(p => p.category === category).length} programmes available
+                  </p>
+                </div>
+                
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {programmes.filter(p => p.category === category).map((programme) => {
+                      const programmeParticipants = getProgrammeParticipants(programme._id?.toString() || '');
+                      const status = getProgrammeStatus(programme);
+                      const totalParticipants = programmeParticipants.reduce((sum, p) => sum + p.participants.length, 0);
+                      
+                      return (
+                        <Link
+                          key={programme._id?.toString()}
+                          href={`/programmes/${programme._id}`}
+                          className="block group"
+                        >
+                          <div className="border rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                {programme.name}
+                              </h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                                {getStatusIcon(status)}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between text-sm text-gray-600 mb-2">
+                              <span>{programme.section}</span>
+                              <span>{programme.positionType}</span>
+                            </div>
+                            
+                            <div className="flex justify-between text-sm">
+                              <span className="text-blue-600 font-medium">{programmeParticipants.length} teams</span>
+                              <span className="text-green-600 font-medium">{totalParticipants} participants</span>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Sections Tab */}
+        {activeTab === 'sections' && (
+          <div className="space-y-6">
+            {sections.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4">
+                  <h2 className="text-2xl font-bold text-white">🏛️ {section.charAt(0).toUpperCase() + section.slice(1)} Section</h2>
+                  <p className="text-orange-100">
+                    {programmes.filter(p => p.section === section).length} programmes • Mixed categories
+                  </p>
+                </div>
+                
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {programmes.filter(p => p.section === section).map((programme) => {
+                      const programmeParticipants = getProgrammeParticipants(programme._id?.toString() || '');
+                      const status = getProgrammeStatus(programme);
+                      const totalParticipants = programmeParticipants.reduce((sum, p) => sum + p.participants.length, 0);
+                      
+                      return (
+                        <Link
+                          key={programme._id?.toString()}
+                          href={`/programmes/${programme._id}`}
+                          className="block group"
+                        >
+                          <div className="border rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">{getCategoryIcon(programme.category)}</span>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(programme.category)}`}>
+                                  {programme.category}
+                                </span>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                                {getStatusIcon(status)}
+                              </span>
+                            </div>
+                            
+                            <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                              {programme.name}
+                            </h3>
+                            
+                            <div className="flex justify-between text-sm">
+                              <span className="text-blue-600 font-medium">{programmeParticipants.length} teams</span>
+                              <span className="text-green-600 font-medium">{totalParticipants} participants</span>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {programmes.length === 0 && (
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-gray-400 text-2xl">🎭</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">No Programmes Available</h2>
+            <p className="text-gray-600">
+              Programme information will appear here once events are scheduled
+            </p>
+          </div>
+        )}
       </div>
-      <PublicFooter />
     </div>
   );
 }
