@@ -53,6 +53,8 @@ export function Navbar() {
                                 }`}>Schedule</Link>
                             <Link href="/programmes" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
                                 }`}>Programmes</Link>
+                            <Link href="/profiles" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
+                                }`}>Profiles</Link>
                             <Link href="/leaderboard" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
                                 }`}>Leaderboard</Link>
                             <Link href="/results" className={`text-white hover:text-purple-300 transition-all duration-300 ${isScrolled ? "text-base font-medium" : "text-sm font-normal"
@@ -106,6 +108,11 @@ export function Navbar() {
                         onClick={() => setIsOpen(false)}
                         className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">
                         Programmes
+                    </Link>
+                    <Link href="/profiles"
+                        onClick={() => setIsOpen(false)}
+                        className="block text-white hover:text-purple-300 px-3 py-3 rounded-lg hover:bg-white/10 transition-all duration-300">
+                        Profiles
                     </Link>
                     <Link href="/leaderboard"
                         onClick={() => setIsOpen(false)}

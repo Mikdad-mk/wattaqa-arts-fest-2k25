@@ -16,6 +16,7 @@ export default function ProgrammesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'arts' | 'sports'>('all');
   const [selectedSection, setSelectedSection] = useState<'all' | 'senior' | 'junior' | 'sub-junior' | 'general'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'completed' | 'active' | 'upcoming'>('all');
 
   useEffect(() => {
     fetchData();
@@ -358,6 +359,16 @@ export default function ProgrammesPage() {
                   {sections.map((section, idx) => (
                     <option key={idx} value={section}>{section}</option>
                   ))}
+                </select>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value as any)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Status</option>
+                  <option value="completed">Completed</option>
+                  <option value="active">Active</option>
+                  <option value="upcoming">Upcoming</option>
                 </select>
               </div>
             </div>

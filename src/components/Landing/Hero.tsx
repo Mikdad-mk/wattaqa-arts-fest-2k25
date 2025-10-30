@@ -20,14 +20,15 @@ export function Hero() {
             height={40}
             className="rounded-full"
           />
-          <span className="font-bold text-xl">Wattaqa 2K25</span>
+          <span className="font-bold text-xl">wattaqa 2K25</span>
         </div>
 
         <div className="hidden md:flex items-center space-x-8 text-gray-500">
           <a href="#about" className="hover:text-gray-900 transition-colors">About</a>
-          <a href="#lineup" className="hover:text-gray-900 transition-colors">Teams</a>
-          <a href="#schedule" className="hover:text-gray-900 transition-colors">Schedule</a>
+          <a href="/teams" className="hover:text-gray-900 transition-colors">Teams</a>
+          <a href="/schedule" className="hover:text-gray-900 transition-colors">Schedule</a>
           <Link href="/programmes" className="hover:text-gray-900 transition-colors">Programmes</Link>
+          <Link href="/profiles" className="hover:text-gray-900 transition-colors">Profiles</Link>
           <Link href="/leaderboard" className="hover:text-gray-900 transition-colors">Leaderboard</Link>
           <Link href="/results" className="hover:text-gray-900 transition-colors">Results</Link>
         </div>
@@ -84,32 +85,33 @@ export function Hero() {
         <div className="flex flex-col md:flex-row items-end justify-center gap-6 max-w-5xl mx-auto">
 
           {/* Green container - Team Sumud */}
-          <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-green-500/25 animate-fade-in-up group"
+          <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden cursor-pointer transform transition-transform duration-500 ease-out hover:scale-105 animate-fade-in-up group"
             style={{ animationDelay: '0.2s' }}>
 
             {/* Floating animation background */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-300/20 to-emerald-600/20 animate-pulse"></div>
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {/* Team Image Background */}
+            <div className="absolute inset-0 opacity-80">
+              <Image
+                src="/images/teams/SUMUD TEAM.png"
+                alt="Team Sumud"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+
+            {/* Green overlay for team color identity */}
+            <div className="absolute inset-0 bg-gradient-to-t from-green-500/50 via-emerald-400/15 to-transparent"></div>
 
             {/* Content */}
-            <div className="text-white text-center relative z-10 group-hover:text-white transition-colors duration-300">
-              <div className="w-20 h-20 mx-auto mb-3 border-2 border-white/30 rounded-xl flex items-center justify-center group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
-                <Image
-                  src="/images/coconut-tree-svgrepo-com.svg"
-                  alt="Team Sumud"
-                  width={40}
-                  height={40}
-                  className="group-hover:scale-110 transition-transform duration-300 filter brightness-0 invert"
-                />
-              </div>
-              <h3 className="text-lg font-bold mb-1">Team Sumud</h3>
-              <p className="text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-300">Arts & Sports Excellence</p>
+            <div className="absolute bottom-6 left-6 right-6 text-white text-center relative z-10">
+              <h3 className="text-lg font-bold mb-1 drop-shadow-lg">Team Sumud</h3>
+              <p className="text-sm opacity-90 drop-shadow-md">Arts & Sports Excellence</p>
             </div>
 
             {/* Animated border */}
-            <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
+            <div className="absolute inset-0 rounded-3xl border-2 border-white/20"></div>
           </div>
 
           {/* Gray container - Team Aqsa (taller) */}
@@ -142,32 +144,33 @@ export function Hero() {
             <div className="absolute inset-0 rounded-3xl border-2 border-white/20"></div>
           </div>
           {/* Red container - Team Inthifada */}
-          <div className="bg-gradient-to-br from-red-400 to-rose-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden flex items-center justify-center cursor-pointer transform transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 animate-fade-in-up group"
+          <div className="bg-gradient-to-br from-red-400 to-rose-500 rounded-3xl w-full md:w-80 h-80 relative overflow-hidden cursor-pointer transform transition-transform duration-500 ease-out hover:scale-105 animate-fade-in-up group"
             style={{ animationDelay: '0.6s' }}>
 
             {/* Floating animation background */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-300/20 to-rose-600/20 animate-pulse"></div>
 
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {/* Team Image Background */}
+            <div className="absolute inset-0 opacity-80">
+              <Image
+                src="/images/teams/INTHIFADA TEAM.png"
+                alt="Team Inthifada"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+
+            {/* Red overlay for team color identity */}
+            <div className="absolute inset-0 bg-gradient-to-t from-red-500/50 via-rose-400/15 to-transparent"></div>
 
             {/* Content */}
-            <div className="text-white text-center relative z-10 group-hover:text-white transition-colors duration-300">
-              <div className="w-20 h-20 mx-auto mb-3 border-2 border-white/30 rounded-xl flex items-center justify-center group-hover:border-white/50 group-hover:scale-110 transition-all duration-300">
-                <Image
-                  src="/images/coconut-tree-svgrepo-com.svg"
-                  alt="Team Inthifada"
-                  width={40}
-                  height={40}
-                  className="group-hover:scale-110 transition-transform duration-300 filter brightness-0 invert"
-                />
-              </div>
-              <h3 className="text-lg font-bold mb-1">Team Inthifada</h3>
-              <p className="text-sm opacity-80 group-hover:opacity-100 transition-opacity duration-300">Innovation & Competition</p>
+            <div className="absolute bottom-6 left-6 right-6 text-white text-center relative z-10">
+              <h3 className="text-lg font-bold mb-1 drop-shadow-lg">Team Inthifada</h3>
+              <p className="text-sm opacity-90 drop-shadow-md">Innovation & Competition</p>
             </div>
 
             {/* Animated border */}
-            <div className="absolute inset-0 rounded-3xl border-2 border-white/20 group-hover:border-white/40 transition-colors duration-300"></div>
+            <div className="absolute inset-0 rounded-3xl border-2 border-white/20"></div>
           </div>
 
         </div>
