@@ -51,6 +51,7 @@ export const NAV_DATA = [
         icon: Icons.FourCircle,
         items: [],
       },
+
       {
         title: "Search",
         url: "/admin/search",
