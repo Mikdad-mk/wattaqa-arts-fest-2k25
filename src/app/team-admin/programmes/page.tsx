@@ -342,6 +342,7 @@ function ProgrammeCard({
 }) {
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -364,6 +365,21 @@ function ProgrammeCard({
 
   const closeModal = () => {
     setShowModal(false);
+    setSelectedParticipants([]);
+    setSearchTerm('');
+  };
+
+  const openEditModal = () => {
+    // Pre-populate with existing participants
+    if (existingParticipant) {
+      setSelectedParticipants(existingParticipant.participants.map(p => p.candidateId || p));
+    }
+    setSearchTerm('');
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
     setSelectedParticipants([]);
     setSearchTerm('');
   };
@@ -439,6 +455,40 @@ function ProgrammeCard({
     }
   };
 
+  const handleUpdate = async () => {
+    if (selectedParticipants.length !== Number(programme.requiredParticipants)) {
+      alert(`Please select exactly ${programme.requiredParticipants} participant(s)`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/programme-participants', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          programmeId: programme._id,
+          teamCode,
+          participants: selectedParticipants
+        })
+      });
+
+      if (response.ok) {
+        closeEditModal();
+        onUpdate();
+        alert('Successfully updated participants!');
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error || 'Failed to update'}`);
+      }
+    } catch (error) {
+      console.error('Error updating participants:', error);
+      alert('Error updating participants');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <div className={`border-2 rounded-xl p-5 transition-all duration-200 ${
@@ -495,7 +545,7 @@ function ProgrammeCard({
               </div>
             </div>
             <button
-              onClick={() => alert('Edit functionality will be available soon!')}
+              onClick={openEditModal}
               className="w-full bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors"
             >
               Edit Participants
@@ -895,6 +945,294 @@ function ProgrammeCard({
                     <span className="flex items-center justify-center">
                       <span className="mr-2">🎉</span>
                       REGISTER TEAM
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <span className="mr-2">⚠️</span>
+                      {selectedParticipants.length === 0 
+                        ? `SELECT ${programme.requiredParticipants} PARTICIPANTS`
+                        : `NEED ${Number(programme.requiredParticipants) - selectedParticipants.length} MORE`
+                      }
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">Edit Participants - {programme.name}</h3>
+                  <div className="flex items-center space-x-4 text-orange-100 text-sm">
+                    <span>📋 {programme.code}</span>
+                    <span>👥 {programme.section}</span>
+                    <span>🎯 {programme.positionType}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={closeEditModal}
+                  className="text-white hover:text-gray-200 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">✏️</span>
+                  <div>
+                    <h4 className="font-semibold text-orange-900">Edit Registration</h4>
+                    <p className="text-orange-700 text-sm">
+                      Update your team's participants for this programme. Select exactly <strong>{programme.requiredParticipants}</strong> participant{programme.requiredParticipants > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Participants */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-2">Current Participants:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {existingParticipant?.participants.map((participant, index) => (
+                    <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                      {participant}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {sectionCandidates.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">😔</div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">No Eligible Candidates</h4>
+                  <p className="text-gray-500">
+                    {programme.section === 'general' 
+                      ? 'No team candidates available for this programme.'
+                      : `No ${programme.section} section candidates available. This programme requires ${programme.section} section participants.`
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                      <span className="text-xl mr-2">👥</span>
+                      Select New Team Participants
+                    </h4>
+                    
+                    {/* Search Box */}
+                    <div className="mb-4">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="🔍 Search by chest number or name..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-4 py-3 pl-10 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900 placeholder-gray-500"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-400 text-lg">🔍</span>
+                        </div>
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            <span className="text-lg">✕</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                      {filteredCandidates.length === 0 ? (
+                        <div className="col-span-2 text-center py-8">
+                          <div className="text-4xl mb-2">🔍</div>
+                          <p className="text-gray-500">No candidates found matching "{searchTerm}"</p>
+                        </div>
+                      ) : (
+                        filteredCandidates.map((candidate) => {
+                          const isSelected = selectedParticipants.includes(candidate.chestNumber);
+                          const isDisabled = !isSelected && selectedParticipants.length >= Number(programme.requiredParticipants);
+                          
+                          return (
+                            <div
+                              key={candidate._id?.toString()}
+                              className={`border-2 rounded-lg p-4 transition-all ${
+                                isSelected
+                                  ? 'border-orange-500 bg-orange-50 shadow-md cursor-pointer'
+                                  : isDisabled
+                                  ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                  : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50 cursor-pointer'
+                              }`}
+                              onClick={() => {
+                                if (isSelected) {
+                                  handleParticipantToggle(candidate.chestNumber);
+                                } else if (!isDisabled) {
+                                  handleParticipantToggle(candidate.chestNumber);
+                                }
+                              }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                  isSelected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                                }`}>
+                                  {isSelected && <span className="text-white text-sm font-bold">✓</span>}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-bold text-gray-900 font-mono text-base">
+                                    {candidate.chestNumber}
+                                  </div>
+                                  <div className="text-gray-700 font-medium">{candidate.name}</div>
+                                  <div className="text-xs text-gray-500 capitalize">
+                                    {candidate.section} Section • {candidate.points} points
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <div className="text-orange-500 font-bold text-sm">
+                                    SELECTED
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Selection Summary */}
+                  <div className={`border-2 rounded-lg p-4 mb-4 ${
+                    selectedParticipants.length === Number(programme.requiredParticipants) 
+                      ? 'bg-green-50 border-green-300' 
+                      : selectedParticipants.length > 0 
+                      ? 'bg-yellow-50 border-yellow-300' 
+                      : 'bg-gray-50 border-gray-300'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className={`font-semibold flex items-center ${
+                        selectedParticipants.length === Number(programme.requiredParticipants) 
+                          ? 'text-green-800' 
+                          : selectedParticipants.length > 0 
+                          ? 'text-yellow-800' 
+                          : 'text-gray-800'
+                      }`}>
+                        <span className="text-lg mr-2">
+                          {selectedParticipants.length === Number(programme.requiredParticipants) ? '✅' : 
+                           selectedParticipants.length > 0 ? '⏳' : '⭕'}
+                        </span>
+                        New Selection
+                      </h5>
+                      <div className={`px-3 py-1 rounded-full font-bold text-lg ${
+                        selectedParticipants.length === Number(programme.requiredParticipants) 
+                          ? 'bg-green-200 text-green-800' 
+                          : selectedParticipants.length > 0 
+                          ? 'bg-yellow-200 text-yellow-800' 
+                          : 'bg-gray-200 text-gray-800'
+                      }`}>
+                        {selectedParticipants.length} / {programme.requiredParticipants}
+                      </div>
+                    </div>
+                    
+                    {selectedParticipants.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {selectedParticipants.map((chestNumber) => {
+                            const candidate = candidates.find(c => c.chestNumber === chestNumber);
+                            return (
+                              <span 
+                                key={chestNumber} 
+                                className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium flex items-center"
+                              >
+                                <span className="mr-1">👤</span>
+                                {chestNumber} - {candidate?.name}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleParticipantToggle(chestNumber);
+                                  }}
+                                  className="ml-2 text-red-600 hover:text-red-800 font-bold"
+                                  title="Remove this participant"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                        {selectedParticipants.length < Number(programme.requiredParticipants) && (
+                          <p className="text-yellow-700 text-sm font-medium">
+                            ⚠️ Need {Number(programme.requiredParticipants) - selectedParticipants.length} more participant{Number(programme.requiredParticipants) - selectedParticipants.length > 1 ? 's' : ''} to update
+                          </p>
+                        )}
+                        {selectedParticipants.length === Number(programme.requiredParticipants) && (
+                          <p className="text-green-700 text-sm font-medium">
+                            🎉 Perfect! You can now update your team registration.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-700 text-sm">
+                        👆 Click on candidate cards above to select {programme.requiredParticipants} participant{programme.requiredParticipants > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-white border-t-2 border-gray-200 px-6 py-6">
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-lg font-semibold text-gray-900">
+                  Selected: <span className="text-orange-600">{selectedParticipants.length}</span> / <span className="text-orange-600">{programme.requiredParticipants}</span> Participants
+                </div>
+                <div className={`px-4 py-2 rounded-full text-sm font-bold ${
+                  selectedParticipants.length === Number(programme.requiredParticipants) 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-orange-100 text-orange-800'
+                }`}>
+                  {selectedParticipants.length === Number(programme.requiredParticipants) ? '✅ Ready to Update' : '⏳ Selection Incomplete'}
+                </div>
+              </div>
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={closeEditModal}
+                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors"
+                >
+                  ❌ Cancel
+                </button>
+                
+                <button
+                  onClick={handleUpdate}
+                  disabled={!(selectedParticipants.length === Number(programme.requiredParticipants) && !isSubmitting)}
+                  className={`flex-1 px-6 py-3 font-bold text-lg rounded-lg transition-all duration-200 border-2 ${
+                    selectedParticipants.length === Number(programme.requiredParticipants) && !isSubmitting
+                      ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 border-orange-600 hover:border-orange-700'
+                      : 'bg-gray-400 text-white cursor-not-allowed opacity-75 border-gray-400'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <span className="animate-spin mr-2">⏳</span>
+                      Updating...
+                    </span>
+                  ) : selectedParticipants.length === Number(programme.requiredParticipants) ? (
+                    <span className="flex items-center justify-center">
+                      <span className="mr-2">✏️</span>
+                      UPDATE PARTICIPANTS
                     </span>
                   ) : (
                     <span className="flex items-center justify-center">

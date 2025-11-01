@@ -110,10 +110,16 @@ export async function PUT(request: NextRequest) {
     const collection = db.collection('programme_participants');
 
     const body = await request.json();
-    const { _id, participants, status } = body;
+    const { _id, programmeId, teamCode, participants, status } = body;
 
-    if (!_id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    // Support both _id and programmeId+teamCode for updates
+    let query: any = {};
+    if (_id) {
+      query._id = new ObjectId(_id);
+    } else if (programmeId && teamCode) {
+      query = { programmeId, teamCode };
+    } else {
+      return NextResponse.json({ error: 'Either _id or both programmeId and teamCode are required' }, { status: 400 });
     }
 
     const updateData: any = {
@@ -123,13 +129,23 @@ export async function PUT(request: NextRequest) {
     if (participants) updateData.participants = participants;
     if (status) updateData.status = status;
 
-    const result = await collection.updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: updateData }
-    );
+    const result = await collection.updateOne(query, { $set: updateData });
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Programme participant not found' }, { status: 404 });
+    }
+
+    // Get the updated document for syncing
+    const updatedDoc = await collection.findOne(query);
+    
+    // Sync to Google Sheets (don't block the response if it fails)
+    try {
+      if (updatedDoc) {
+        await syncProgrammeRegistrationToSheets(updatedDoc);
+        console.log(`✅ Programme registration update synced to Google Sheets for team ${updatedDoc.teamCode}`);
+      }
+    } catch (error) {
+      console.error('⚠️ Failed to sync update to Google Sheets, but update was saved:', error);
     }
 
     return NextResponse.json({ message: 'Programme participant updated successfully' });
