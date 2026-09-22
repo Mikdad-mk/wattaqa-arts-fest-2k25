@@ -56,7 +56,7 @@ export function DraftPanel() {
       setCandidates(unassigned);
       setTeams(teamsData);
       setDraftState(stateData.draftState);
-      
+
       if (customOrder.length === 0 && teamsData.length > 0) {
         const uniqueTeams = Array.from(new Set(teamsData.map((t: Team) => t.code))) as string[];
         setCustomOrder(uniqueTeams.sort());
@@ -121,7 +121,7 @@ export function DraftPanel() {
 
   const startDraft = async () => {
     try {
-      const response = await fetch('/api/draft/init', { 
+      const response = await fetch('/api/draft/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customOrder })
@@ -154,7 +154,7 @@ export function DraftPanel() {
       <Breadcrumb pageName="Team Member Draft" />
 
       <div className="space-y-6">
-        {/* Draft State Banner */}
+
         <div className={`border rounded-lg p-6 ${isMyTurn ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'} shadow-sm`}>
           <div className="flex justify-between items-center">
             <div>
@@ -167,7 +167,9 @@ export function DraftPanel() {
                 </p>
               )}
             </div>
-            
+
+
+
             {user?.userType === 'admin' && draftState?.status !== 'in_progress' && (
               <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4 w-full">
                 <h3 className="font-bold text-gray-800 mb-3">Set Draft Turn Order</h3>
@@ -179,14 +181,14 @@ export function DraftPanel() {
                         {teams.find(t => t.code === teamCode)?.name || teamCode}
                       </span>
                       <div className="flex space-x-1">
-                        <button 
+                        <button
                           onClick={() => moveUp(idx)}
                           disabled={idx === 0}
                           className="px-2 py-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 rounded text-gray-600 text-xs font-bold"
                         >
                           ↑
                         </button>
-                        <button 
+                        <button
                           onClick={() => moveDown(idx)}
                           disabled={idx === customOrder.length - 1}
                           className="px-2 py-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 rounded text-gray-600 text-xs font-bold"
@@ -197,7 +199,7 @@ export function DraftPanel() {
                     </div>
                   ))}
                 </div>
-                <button 
+                <button
                   onClick={startDraft}
                   className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm"
                 >
@@ -205,7 +207,7 @@ export function DraftPanel() {
                 </button>
               </div>
             )}
-            
+
             {isMyTurn && (
               <div className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold animate-pulse">
                 Your Turn! Select a candidate below.
@@ -242,11 +244,10 @@ export function DraftPanel() {
                       <button
                         onClick={() => handlePickCandidate(candidate._id as string)}
                         disabled={!isMyTurn}
-                        className={`px-4 py-1.5 rounded-lg font-medium text-sm transition ${
-                          isMyTurn 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        }`}
+                        className={`px-4 py-1.5 rounded-lg font-medium text-sm transition ${isMyTurn
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          }`}
                       >
                         {isMyTurn ? 'Select' : 'Wait Turn'}
                       </button>

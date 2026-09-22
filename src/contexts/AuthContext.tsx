@@ -10,6 +10,12 @@ interface AuthUser {
   avatarUrl: string;
   isAdmin: boolean;
   authProvider?: string;
+  userType?: 'admin' | 'team-captain' | 'user';
+  team?: {
+    code: string;
+    name?: string;
+    id?: string;
+  };
 }
 
 interface AuthContextType {
