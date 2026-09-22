@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Check if the request is for admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    // For now, we'll allow access to admin routes
-    // In a production app, you'd want to verify the user's authentication status
-    // and admin privileges here
+  const { pathname } = request.nextUrl;
+  
+  // Check if the request is for nested admin routes
+  if (pathname.startsWith('/admin') && pathname !== '/admin' && pathname !== '/admin/') {
+    // If no active fest is selected, redirect to the main admin page to choose one
+    if (!request.cookies.has('activeFestId')) {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
     return NextResponse.next();
   }
 

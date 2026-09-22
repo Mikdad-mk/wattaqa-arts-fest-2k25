@@ -13,7 +13,9 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  
+  const [selectedResults, setSelectedResults] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   // Enhanced form state
   const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
   const [selectedSection, setSelectedSection] = useState<string>('');
@@ -21,7 +23,8 @@ export default function ResultsPage() {
   const [filteredTeams, setFilteredTeams] = useState<any[]>([]);
   const [showParticipants, setShowParticipants] = useState(false);
   const [teams, setTeams] = useState<any[]>([]);
-  
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [formData, setFormData] = useState({
     programme: '',
     section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
@@ -37,9 +40,9 @@ export default function ResultsPage() {
     thirdPlaceTeams: [] as string[],
     participationTeamGrades: [] as { teamCode: string; grade: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'; points: number }[],
     firstPoints: 10,
-    secondPoints: 7,
+    secondPoints: 8,
     thirdPoints: 5,
-    participationPoints: 2,
+    participationPoints: 3,
     notes: ''
   });
 
@@ -54,17 +57,17 @@ export default function ResultsPage() {
         fetch('/api/programme-participants'),
         fetch('/api/teams')
       ]);
-      
+
       // Check if all responses are OK before parsing JSON
       const responses = [resultsRes, programmesRes, candidatesRes, participantsRes, teamsRes];
       const responseNames = ['results', 'programmes', 'candidates', 'programme-participants', 'teams'];
-      
+
       for (let i = 0; i < responses.length; i++) {
         if (!responses[i].ok) {
           throw new Error(`Failed to fetch ${responseNames[i]}: ${responses[i].status} ${responses[i].statusText}`);
         }
       }
-      
+
       const [resultsData, programmesData, candidatesData, participantsData, teamsData] = await Promise.all([
         resultsRes.json(),
         programmesRes.json(),
@@ -72,7 +75,7 @@ export default function ResultsPage() {
         participantsRes.json(),
         teamsRes.json()
       ]);
-      
+
       setResults(resultsData || []);
       setProgrammes(programmesData || []);
       setCandidates(candidatesData || []);
@@ -102,12 +105,16 @@ export default function ResultsPage() {
     setSelectedSection('');
     setFilteredParticipants([]);
     setShowParticipants(false);
-    
+
     if (programme) {
       setFormData(prev => ({
         ...prev,
         programme: `${programme.code} - ${programme.name}`,
-        positionType: programme.positionType || 'individual'
+        positionType: programme.positionType || 'individual',
+        firstPoints: programme.firstPoints ?? 10,
+        secondPoints: programme.secondPoints ?? 8,
+        thirdPoints: programme.thirdPoints ?? 5,
+        participationPoints: programme.participationPoints ?? 3
       }));
     }
   };
@@ -116,14 +123,14 @@ export default function ResultsPage() {
   const handleSectionSelection = (section: string) => {
     setSelectedSection(section);
     setFormData(prev => ({ ...prev, section: section as any }));
-    
+
     if (selectedProgramme && section) {
       if (selectedProgramme.positionType === 'general') {
         // For general programmes, show teams that registered
-        const programmeParticipants = participants.filter(p => 
+        const programmeParticipants = participants.filter(p =>
           p.programmeId === selectedProgramme._id?.toString()
         );
-        
+
         const registeredTeams = programmeParticipants.map(pp => {
           const team = teams.find(t => t.code === pp.teamCode);
           return {
@@ -134,20 +141,21 @@ export default function ResultsPage() {
             participantCount: pp.participants.length
           };
         });
-        
+
         setFilteredTeams(registeredTeams);
         setFilteredParticipants([]);
       } else {
         // For individual/group programmes, show participants
-        const programmeParticipants = participants.filter(p => 
+        const programmeParticipants = participants.filter(p =>
           p.programmeId === selectedProgramme._id?.toString()
         );
-        
-        const detailedParticipants = programmeParticipants.flatMap(pp => 
+
+        const detailedParticipants = programmeParticipants.flatMap(pp =>
           pp.participants.map(chestNumber => {
-            const candidate = candidates.find(c => c.chestNumber === chestNumber);
+            const trimmedChestNumber = (chestNumber || '').trim();
+            const candidate = candidates.find(c => (c.chestNumber || '').trim() === trimmedChestNumber);
             return {
-              chestNumber,
+              chestNumber: trimmedChestNumber,
               candidate,
               teamCode: pp.teamCode,
               programmeName: pp.programmeName,
@@ -155,11 +163,11 @@ export default function ResultsPage() {
             };
           })
         ).filter(p => p.candidate && (section === 'general' || p.candidate.section === section));
-        
+
         setFilteredParticipants(detailedParticipants);
         setFilteredTeams([]);
       }
-      
+
       setShowParticipants(true);
     }
   };
@@ -245,7 +253,7 @@ export default function ResultsPage() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.programme || !formData.section || !formData.positionType) {
       alert('Please fill in all required fields');
       return;
@@ -288,9 +296,9 @@ export default function ResultsPage() {
           thirdPlaceTeams: [],
           participationTeamGrades: [],
           firstPoints: 10,
-          secondPoints: 7,
+          secondPoints: 8,
           thirdPoints: 5,
-          participationPoints: 2,
+          participationPoints: 3,
           notes: ''
         });
         setSelectedProgramme(null);
@@ -298,7 +306,7 @@ export default function ResultsPage() {
         setFilteredParticipants([]);
         setFilteredTeams([]);
         setShowParticipants(false);
-        
+
         await fetchData();
         alert('Result added successfully!');
       } else {
@@ -337,6 +345,45 @@ export default function ResultsPage() {
       alert('Error deleting result');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const allResultIds = results
+        .filter(r => !searchQuery || (r.programme && r.programme.toLowerCase().includes(searchQuery.toLowerCase())))
+        .map(r => r._id?.toString())
+        .filter(Boolean) as string[];
+      setSelectedResults(allResultIds);
+    } else {
+      setSelectedResults([]);
+    }
+  };
+
+  const handleSelect = (id: string) => {
+    setSelectedResults(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedResults.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedResults.length} selected results?`)) return;
+
+    try {
+      setBulkDeleting(true);
+      await Promise.all(
+        selectedResults.map(id => fetch(`/api/results?id=${id}`, { method: 'DELETE' }))
+      );
+      
+      await fetchData();
+      setSelectedResults([]);
+      alert(`Successfully deleted ${selectedResults.length} results!`);
+    } catch (error) {
+      console.error('Error in bulk delete:', error);
+      alert('Error deleting some results');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -432,19 +479,18 @@ export default function ResultsPage() {
                     const isSecond = formData.secondPlaceTeams.includes(teamEntry.teamCode);
                     const isThird = formData.thirdPlaceTeams.includes(teamEntry.teamCode);
                     const participationGrade = formData.participationTeamGrades.find(pg => pg.teamCode === teamEntry.teamCode);
-                    
+
                     return (
-                      <div 
+                      <div
                         key={index}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          isAssigned
-                            ? 'border-green-300 bg-green-50'
-                            : 'border-gray-200 bg-white hover:border-blue-300'
-                        }`}
+                        className={`p-3 rounded-lg border-2 transition-all ${isAssigned
+                          ? 'border-green-300 bg-green-50'
+                          : 'border-gray-200 bg-white hover:border-blue-300'
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div>
-                            <div 
+                            <div
                               className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2 mb-1"
                               style={{ backgroundColor: teamEntry.team?.color || '#6B7280' }}
                             >
@@ -463,38 +509,35 @@ export default function ResultsPage() {
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Position Buttons */}
                         <div className="flex flex-wrap gap-1 mb-2">
                           <button
                             type="button"
                             onClick={() => toggleTeamPosition('firstPlaceTeams', teamEntry.teamCode)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              isFirst ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            }`}
+                            className={`px-2 py-1 text-xs rounded ${isFirst ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                              }`}
                           >
                             🥇 1st
                           </button>
                           <button
                             type="button"
                             onClick={() => toggleTeamPosition('secondPlaceTeams', teamEntry.teamCode)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              isSecond ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                            }`}
+                            className={`px-2 py-1 text-xs rounded ${isSecond ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                              }`}
                           >
                             🥈 2nd
                           </button>
                           <button
                             type="button"
                             onClick={() => toggleTeamPosition('thirdPlaceTeams', teamEntry.teamCode)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              isThird ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                            }`}
+                            className={`px-2 py-1 text-xs rounded ${isThird ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                              }`}
                           >
                             🥉 3rd
                           </button>
                         </div>
-                        
+
                         {/* Participation Grade */}
                         <div className="flex items-center space-x-1">
                           <select
@@ -502,7 +545,7 @@ export default function ResultsPage() {
                             onChange={(e) => {
                               if (e.target.value) {
                                 addTeamParticipationGrade(
-                                  teamEntry.teamCode, 
+                                  teamEntry.teamCode,
                                   e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F',
                                   formData.participationPoints
                                 );
@@ -525,8 +568,8 @@ export default function ResultsPage() {
                               type="number"
                               value={participationGrade.points}
                               onChange={(e) => addTeamParticipationGrade(
-                                teamEntry.teamCode, 
-                                participationGrade.grade, 
+                                teamEntry.teamCode,
+                                participationGrade.grade,
                                 parseInt(e.target.value) || 0
                               )}
                               className="text-xs px-1 py-1 border border-gray-300 rounded bg-white w-12"
@@ -554,15 +597,14 @@ export default function ResultsPage() {
                     const isSecond = formData.secondPlace.includes(participant.chestNumber);
                     const isThird = formData.thirdPlace.includes(participant.chestNumber);
                     const participationGrade = formData.participationGrades.find(pg => pg.chestNumber === participant.chestNumber);
-                    
+
                     return (
-                      <div 
+                      <div
                         key={index}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          isAssigned
-                            ? 'border-green-300 bg-green-50'
-                            : 'border-gray-200 bg-white hover:border-blue-300'
-                        }`}
+                        className={`p-3 rounded-lg border-2 transition-all ${isAssigned
+                          ? 'border-green-300 bg-green-50'
+                          : 'border-gray-200 bg-white hover:border-blue-300'
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div>
@@ -582,38 +624,35 @@ export default function ResultsPage() {
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Position Buttons */}
                         <div className="flex flex-wrap gap-1 mb-2">
                           <button
                             type="button"
                             onClick={() => togglePosition('firstPlace', participant.chestNumber)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              isFirst ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            }`}
+                            className={`px-2 py-1 text-xs rounded ${isFirst ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                              }`}
                           >
                             🥇 1st
                           </button>
                           <button
                             type="button"
                             onClick={() => togglePosition('secondPlace', participant.chestNumber)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              isSecond ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                            }`}
+                            className={`px-2 py-1 text-xs rounded ${isSecond ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                              }`}
                           >
                             🥈 2nd
                           </button>
                           <button
                             type="button"
                             onClick={() => togglePosition('thirdPlace', participant.chestNumber)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              isThird ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                            }`}
+                            className={`px-2 py-1 text-xs rounded ${isThird ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                              }`}
                           >
                             🥉 3rd
                           </button>
                         </div>
-                        
+
                         {/* Participation Grade */}
                         <div className="flex items-center space-x-1">
                           <select
@@ -621,7 +660,7 @@ export default function ResultsPage() {
                             onChange={(e) => {
                               if (e.target.value) {
                                 addParticipationGrade(
-                                  participant.chestNumber, 
+                                  participant.chestNumber,
                                   e.target.value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F',
                                   formData.participationPoints
                                 );
@@ -644,8 +683,8 @@ export default function ResultsPage() {
                               type="number"
                               value={participationGrade.points}
                               onChange={(e) => addParticipationGrade(
-                                participant.chestNumber, 
-                                participationGrade.grade, 
+                                participant.chestNumber,
+                                participationGrade.grade,
                                 parseInt(e.target.value) || 0
                               )}
                               className="text-xs px-1 py-1 border border-gray-300 rounded bg-white w-12"
@@ -753,6 +792,25 @@ export default function ResultsPage() {
 
         {/* Results List */}
         <ShowcaseSection title="Results List">
+          <div className="mb-6 flex justify-between items-center">
+            <input
+              type="text"
+              placeholder="Search by programme name or code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+            />
+            {selectedResults.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center shadow-sm"
+              >
+                {bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedResults.length})`}
+              </button>
+            )}
+          </div>
+          
           {results.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-600">No results found. Add your first result above!</p>
@@ -762,6 +820,14 @@ export default function ResultsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr className="border-b-2 border-gray-200">
+                    <th className="w-12 py-4 px-4">
+                      <input
+                        type="checkbox"
+                        onChange={handleSelectAll}
+                        checked={results.length > 0 && selectedResults.length === results.filter(r => !searchQuery || (r.programme && r.programme.toLowerCase().includes(searchQuery.toLowerCase()))).length}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                      />
+                    </th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Programme</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">Section</th>
                     <th className="text-left py-4 px-4 font-bold text-gray-700">🥇 First</th>
@@ -772,8 +838,21 @@ export default function ResultsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map((result) => (
+                  {results
+                    .filter((result) => 
+                      !searchQuery || 
+                      (result.programme && result.programme.toLowerCase().includes(searchQuery.toLowerCase()))
+                    )
+                    .map((result) => (
                     <tr key={result._id?.toString()} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedResults.includes(result._id!.toString())}
+                          onChange={() => handleSelect(result._id!.toString())}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 px-4 font-medium text-gray-900">{result.programme}</td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
@@ -909,8 +988,8 @@ export default function ResultsPage() {
                       <td className="py-3 px-4">
                         <div className="flex space-x-2">
                           <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                          <button 
-                            onClick={() => handleDelete(result._id!.toString(), result.programme)}
+                          <button
+                            onClick={() => handleDelete(result._id!.toString(), result.programme || 'Unknown Programme')}
                             disabled={deleting === result._id?.toString()}
                             className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
                           >

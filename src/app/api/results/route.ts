@@ -3,6 +3,7 @@ import { getDatabase } from '@/lib/mongodb';
 import { Result } from '@/types';
 import { ObjectId } from 'mongodb';
 import { syncResultToSheets } from '@/lib/googleSheets';
+import { cookies } from 'next/headers';
 
 
 export async function GET() {
@@ -10,7 +11,15 @@ export async function GET() {
     const db = await getDatabase();
     const collection = db.collection<Result>('results');
     
-    const results = await collection.find({}).toArray();
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+    
+    let query: any = {};
+    if (activeFestId) {
+      query.festId = activeFestId;
+    }
+    
+    const results = await collection.find(query).toArray();
     
     return NextResponse.json(results);
   } catch (error) {
@@ -27,11 +36,19 @@ export async function POST(request: Request) {
     const db = await getDatabase();
     const collection = db.collection<Result>('results');
     
-    const newResult = {
-      ...body,
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+
+    const { _id, ...bodyWithoutId } = body;
+    const newResult: Result & { festId?: string } = {
+      ...bodyWithoutId,
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    
+    if (activeFestId) {
+      newResult.festId = activeFestId;
+    }
     
     const result = await collection.insertOne(newResult);
     

@@ -10,6 +10,12 @@ export const NAV_DATA = [
         icon: Icons.User,
         items: [],
       },
+      {
+        title: "Team Draft",
+        url: "/admin/draft",
+        icon: Icons.User,
+        items: [],
+      },
     ],
   },
   {
@@ -92,6 +98,12 @@ export const NAV_DATA = [
       {
         title: "Google Sheets",
         url: "/admin/sync",
+        icon: Icons.Table,
+        items: [],
+      },
+      {
+        title: "Database",
+        url: "/admin/database",
         icon: Icons.Table,
         items: [],
       },

@@ -5,9 +5,10 @@ type PropsType = {
   title: string;
   children: ReactNode;
   className?: string;
+  id?: string;
 };
 
-export function ShowcaseSection({ title, children, className }: PropsType) {
+export function ShowcaseSection({ title, children, className, id }: PropsType) {
   const getSectionIcon = (title: string) => {
     if (title.toLowerCase().includes('team')) return '👥';
     if (title.toLowerCase().includes('candidate')) return '🎓';
@@ -37,7 +38,7 @@ export function ShowcaseSection({ title, children, className }: PropsType) {
   };
 
   return (
-    <div className="rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <div id={id} className="rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
         <h2 className="font-bold text-gray-900 flex items-center space-x-3">
           <div className={`w-10 h-10 bg-gradient-to-r ${getGradientColors(title)} rounded-lg flex items-center justify-center shadow-sm`}>

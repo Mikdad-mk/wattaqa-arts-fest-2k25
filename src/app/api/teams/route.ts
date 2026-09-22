@@ -2,13 +2,22 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { Team } from '@/types';
 import { ObjectId } from 'mongodb';
+import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
     const db = await getDatabase();
     const collection = db.collection<Team>('teams');
     
-    let teams = await collection.find({}).toArray();
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+    
+    let query: any = {};
+    if (activeFestId) {
+      query.festId = activeFestId;
+    }
+    
+    let teams = await collection.find(query).toArray();
     
     // If no teams exist, create the 3 fixed festival teams
     // These teams are permanent and cannot be deleted
@@ -24,7 +33,8 @@ export async function GET() {
           members: 0,
           points: 0,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          ...(activeFestId && { festId: activeFestId })
         },
         {
           code: 'INT',
@@ -36,7 +46,8 @@ export async function GET() {
           members: 0,
           points: 0,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          ...(activeFestId && { festId: activeFestId })
         },
         {
           code: 'AQS',
@@ -48,7 +59,8 @@ export async function GET() {
           members: 0,
           points: 0,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          ...(activeFestId && { festId: activeFestId })
         }
       ];
       
@@ -75,13 +87,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Team code already exists' }, { status: 400 });
     }
     
-    const newTeam: Team = {
-      ...body,
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+
+    const { _id, ...bodyWithoutId } = body;
+    const newTeam: Team & { festId?: string } = {
+      ...bodyWithoutId,
       members: 0,
       points: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    
+    if (activeFestId) {
+      newTeam.festId = activeFestId;
+    }
     
     const result = await collection.insertOne(newTeam);
     

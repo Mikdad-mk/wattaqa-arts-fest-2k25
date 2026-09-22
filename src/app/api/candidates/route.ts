@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { Candidate } from '@/types';
 import { ObjectId } from 'mongodb';
+import { cookies } from 'next/headers';
 
 
 export async function GET(request: Request) {
@@ -25,6 +26,13 @@ export async function GET(request: Request) {
       query.team = team;
     }
     
+    // Add festId filter
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+    if (activeFestId) {
+      query.festId = activeFestId;
+    }
+    
     const candidates = await collection.find(query).toArray();
     
     return NextResponse.json(candidates);
@@ -40,12 +48,20 @@ export async function POST(request: Request) {
     const db = await getDatabase();
     const collection = db.collection<Candidate>('candidates');
     
-    const newCandidate: Candidate = {
-      ...body,
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+
+    const { _id, ...bodyWithoutId } = body;
+    const newCandidate: Candidate & { festId?: string } = {
+      ...bodyWithoutId,
       points: 0, // New candidates start with 0 points
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    
+    if (activeFestId) {
+      newCandidate.festId = activeFestId;
+    }
     
     const result = await collection.insertOne(newCandidate);
     

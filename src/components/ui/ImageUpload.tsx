@@ -66,7 +66,7 @@ export function ImageUpload({
       }
 
       // Resize image for better performance
-      const resizedResult = await resizeImage(base64Result.data!, 120, 120, 0.6);
+      const resizedResult = await resizeImage(base64Result.data!, 500, 500, 0.85);
       if (!resizedResult.success) {
         setError(resizedResult.error || 'Failed to resize image');
         setIsUploading(false);

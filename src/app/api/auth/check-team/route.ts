@@ -13,9 +13,12 @@ export async function POST(request: Request) {
     const db = await getDatabase();
     const collection = db.collection<Team>('teams');
     
-    // Check if email matches any team captain email
+    // Check if email matches any team captain email or leaders
     const team = await collection.findOne({ 
-      captainEmail: { $regex: new RegExp(`^${email}$`, 'i') } 
+      $or: [
+        { captainEmail: { $regex: new RegExp(`^${email}$`, 'i') } },
+        { leaders: { $regex: new RegExp(`^${email}$`, 'i') } }
+      ]
     });
     
     if (team) {

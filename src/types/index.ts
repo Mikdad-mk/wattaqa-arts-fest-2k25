@@ -28,6 +28,10 @@ export interface Programme {
   type?: 'individual' | 'group' | 'general'; // Alias for positionType
   requiredParticipants: number; // Number of participants required
   maxParticipants?: number; // Maximum participants allowed
+  firstPoints?: number; // Custom points for 1st place
+  secondPoints?: number; // Custom points for 2nd place
+  thirdPoints?: number; // Custom points for 3rd place
+  participationPoints?: number; // Custom points for participation
   status: 'active' | 'inactive' | 'completed';
   createdAt?: Date;
   updatedAt?: Date;
@@ -121,6 +125,16 @@ export interface GalleryImage {
   fileSize: number; // File size in bytes
   uploadedBy: string; // User who uploaded the image
   tags?: string[]; // Optional tags for better organization
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export interface DraftState {
+  _id?: ObjectId | string;
+  currentTurn: string; // team code
+  round: number;
+  pickNumber: number;
+  turnOrder: string[]; // array of team codes in the order they draft in the current round
+  status: 'pending' | 'in_progress' | 'completed';
   createdAt?: Date;
   updatedAt?: Date;
 }

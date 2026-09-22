@@ -30,6 +30,7 @@ export default function GalleryPage() {
   });
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [selectedImageToView, setSelectedImageToView] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -336,7 +337,7 @@ export default function GalleryPage() {
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="flex space-x-2">
                       <button 
-                        onClick={() => window.open(image.imageData, '_blank')}
+                        onClick={() => setSelectedImageToView(image.imageData)}
                         className="bg-white text-gray-900 p-2 rounded-lg text-sm hover:bg-gray-100"
                       >
                         View
@@ -420,6 +421,29 @@ export default function GalleryPage() {
           </div>
         </ShowcaseSection>
       </div>
+
+      {/* Image Modal */}
+      {selectedImageToView && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+          onClick={() => setSelectedImageToView(null)}
+        >
+          <div className="relative max-w-5xl max-h-full w-full flex items-center justify-center">
+            <button 
+              onClick={() => setSelectedImageToView(null)}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 z-50 text-3xl font-bold bg-black bg-opacity-50 w-10 h-10 rounded-full flex items-center justify-center"
+            >
+              &times;
+            </button>
+            <img 
+              src={selectedImageToView} 
+              alt="Fullscreen view" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

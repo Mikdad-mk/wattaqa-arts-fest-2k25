@@ -35,7 +35,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           return;
         }
 
-        if (requireTeamCaptain && user.userType !== 'team-captain') {
+        if (requireTeamCaptain && user.userType !== 'team-captain' && user.userType !== 'admin') {
           router.push('/');
           return;
         }

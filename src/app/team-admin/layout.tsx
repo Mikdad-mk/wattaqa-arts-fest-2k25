@@ -24,6 +24,17 @@ export default function TeamAdminLayout({
         const user = JSON.parse(storedUser);
         if (user.userType === 'team-captain' && user.team) {
           setSelectedTeam(user.team.code);
+        } else if (user.userType === 'admin') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const teamFromUrl = urlParams.get('team');
+          const savedTeam = localStorage.getItem('selectedTeam');
+          
+          if (teamFromUrl) {
+            setSelectedTeam(teamFromUrl);
+            localStorage.setItem('selectedTeam', teamFromUrl);
+          } else if (savedTeam) {
+            setSelectedTeam(savedTeam);
+          }
         }
       } catch (error) {
         console.error('Error parsing user data:', error);

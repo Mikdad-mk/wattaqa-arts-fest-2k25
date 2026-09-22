@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Team } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TeamSidebarProps {
   selectedTeam: string;
@@ -30,6 +31,12 @@ const getNavigation = (teamCode: string) => [
     description: 'Manage Team Members'
   },
   {
+    name: 'Team Draft',
+    href: `/team-admin/draft?team=${teamCode}`,
+    icon: '🎯',
+    description: 'Select Team Members'
+  },
+  {
     name: 'Programmes',
     href: `/team-admin/programmes?team=${teamCode}`,
     icon: '🎯',
@@ -51,6 +58,7 @@ const getNavigation = (teamCode: string) => [
 
 export default function TeamSidebar({ selectedTeam, teamData, onSwitchTeam }: TeamSidebarProps) {
   const pathname = usePathname();
+  const { logout } = useAuth();
   const navigation = getNavigation(selectedTeam);
 
   return (
@@ -142,6 +150,13 @@ export default function TeamSidebar({ selectedTeam, teamData, onSwitchTeam }: Te
             </div>
           </div>
         </div>
+
+        <button
+          onClick={logout}
+          className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
+        >
+          <span className="mr-2">🚪</span> Logout
+        </button>
       </div>
     </div>
   );

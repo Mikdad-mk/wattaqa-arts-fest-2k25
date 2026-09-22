@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { Programme } from '@/types';
 import { ObjectId } from 'mongodb';
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   try {
@@ -24,13 +25,22 @@ export async function GET(request: Request) {
     
     // Otherwise, fetch all programmes
     // Filter out blank/empty programmes using MongoDB query
-    const programmes = await collection.find({
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+    
+    let query: any = {
       name: { $exists: true, $ne: '', $ne: null },
       code: { $exists: true, $ne: '', $ne: null },
       category: { $exists: true, $ne: '', $ne: null },
       section: { $exists: true, $ne: '', $ne: null },
       positionType: { $exists: true, $ne: '', $ne: null }
-    }).toArray();
+    };
+    
+    if (activeFestId) {
+      query.festId = activeFestId;
+    }
+    
+    const programmes = await collection.find(query).toArray();
     
     return NextResponse.json(programmes);
   } catch (error) {
@@ -45,11 +55,19 @@ export async function POST(request: Request) {
     const db = await getDatabase();
     const collection = db.collection<Programme>('programmes');
     
-    const newProgramme: Programme = {
-      ...body,
+    const cookieStore = await cookies();
+    const activeFestId = cookieStore.get('activeFestId')?.value;
+
+    const { _id, ...bodyWithoutId } = body;
+    const newProgramme: Programme & { festId?: string } = {
+      ...bodyWithoutId,
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    
+    if (activeFestId) {
+      newProgramme.festId = activeFestId;
+    }
     
     const result = await collection.insertOne(newProgramme);
     

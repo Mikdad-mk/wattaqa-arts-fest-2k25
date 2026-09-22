@@ -23,9 +23,20 @@ export default function ProgrammesPage() {
     section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
     positionType: '' as 'individual' | 'group' | 'general' | '',
     requiredParticipants: 1,
-    maxParticipants: ''
+    maxParticipants: '',
+    firstPoints: 10,
+    secondPoints: 8,
+    thirdPoints: 5,
+    participationPoints: 3
   });
   const [isEditMode, setIsEditMode] = useState(false);
+
+  // Filters state
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterSubcategory, setFilterSubcategory] = useState('');
+  const [filterSection, setFilterSection] = useState('');
+  const [filterPositionType, setFilterPositionType] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter out blank/empty programmes
   const filterValidProgrammes = (programmes: Programme[]) => {
@@ -87,7 +98,11 @@ export default function ProgrammesPage() {
       section: programme.section as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
       positionType: programme.positionType as 'individual' | 'group' | 'general' | '',
       requiredParticipants: programme.requiredParticipants || 1,
-      maxParticipants: programme.maxParticipants?.toString() || ''
+      maxParticipants: programme.maxParticipants?.toString() || '',
+      firstPoints: programme.firstPoints ?? 10,
+      secondPoints: programme.secondPoints ?? 8,
+      thirdPoints: programme.thirdPoints ?? 5,
+      participationPoints: programme.participationPoints ?? 3
     });
     setIsEditMode(true);
     // Scroll to form
@@ -105,7 +120,11 @@ export default function ProgrammesPage() {
       section: '' as 'senior' | 'junior' | 'sub-junior' | 'general' | '',
       positionType: '' as 'individual' | 'group' | 'general' | '',
       requiredParticipants: 1,
-      maxParticipants: ''
+      maxParticipants: '',
+      firstPoints: 10,
+      secondPoints: 8,
+      thirdPoints: 5,
+      participationPoints: 3
     });
     setIsEditMode(false);
   };
@@ -245,13 +264,65 @@ export default function ProgrammesPage() {
   const programmeRegistrations = getProgrammeRegistrations();
   const totalRegistrations = participants.length;
 
+  const handleExportCSV = () => {
+    const programmesToExport = programmes.filter((programme) => {
+      if (filterCategory && programme.category !== filterCategory) return false;
+      if (filterCategory === 'arts' && filterSubcategory && programme.subcategory !== filterSubcategory) return false;
+      if (filterSection && programme.section !== filterSection) return false;
+      if (filterPositionType && programme.positionType !== filterPositionType) return false;
+      return true;
+    });
+
+    if (programmesToExport.length === 0) {
+      alert('No programmes to export!');
+      return;
+    }
+
+    const headers = ['Sl. No.', 'Code', 'Programme Name', 'Category', 'Section', 'Position Type', 'Required Participants', 'Status'];
+    const csvContent = [
+      headers.join(','),
+      ...programmesToExport.map((p, i) => [
+        i + 1,
+        `"${p.code || ''}"`,
+        `"${p.name || ''}"`,
+        `"${p.category || ''}"`,
+        `"${p.section || ''}"`,
+        `"${p.positionType || ''}"`,
+        p.requiredParticipants || 1,
+        `"${p.status || ''}"`
+      ].join(','))
+    ].join('\n');
+
+    const filterParts = [];
+    if (filterCategory) filterParts.push(filterCategory.charAt(0).toUpperCase() + filterCategory.slice(1));
+    if (filterCategory === 'arts' && filterSubcategory) filterParts.push(filterSubcategory.charAt(0).toUpperCase() + filterSubcategory.slice(1));
+    if (filterSection) filterParts.push(filterSection.charAt(0).toUpperCase() + filterSection.slice(1));
+    if (filterPositionType) filterParts.push(filterPositionType.charAt(0).toUpperCase() + filterPositionType.slice(1));
+    
+    const fileName = filterParts.length > 0 
+      ? `${filterParts.join('-')}.csv` 
+      : 'programmes_list.csv';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
-      <Breadcrumb pageName="Programmes" />
+      <div className="print:hidden">
+        <Breadcrumb pageName="Programmes" />
+      </div>
 
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex space-x-1">
+        <div className="flex space-x-1 print:hidden">
           <button
             onClick={() => setActiveTab('manage')}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${activeTab === 'manage'
@@ -276,8 +347,9 @@ export default function ProgrammesPage() {
         {activeTab === 'manage' && (
           <>
             {/* Programme Form */}
-            <ShowcaseSection title={isEditMode ? 'Edit Programme' : 'Add New Programme'} id="programme-form">
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="print:hidden">
+              <ShowcaseSection title={isEditMode ? 'Edit Programme' : 'Add New Programme'} id="programme-form">
+                <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -400,6 +472,64 @@ export default function ProgrammesPage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      1st Place Points
+                    </label>
+                    <input
+                      type="number"
+                      name="firstPoints"
+                      value={formData.firstPoints}
+                      onChange={(e) => setFormData(prev => ({ ...prev, firstPoints: parseInt(e.target.value) || 0 }))}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      2nd Place Points
+                    </label>
+                    <input
+                      type="number"
+                      name="secondPoints"
+                      value={formData.secondPoints}
+                      onChange={(e) => setFormData(prev => ({ ...prev, secondPoints: parseInt(e.target.value) || 0 }))}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      3rd Place Points
+                    </label>
+                    <input
+                      type="number"
+                      name="thirdPoints"
+                      value={formData.thirdPoints}
+                      onChange={(e) => setFormData(prev => ({ ...prev, thirdPoints: parseInt(e.target.value) || 0 }))}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Participation Points
+                    </label>
+                    <input
+                      type="number"
+                      name="participationPoints"
+                      value={formData.participationPoints}
+                      onChange={(e) => setFormData(prev => ({ ...prev, participationPoints: parseInt(e.target.value) || 0 }))}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                    />
+                  </div>
+                </div>
+
                 <div className="mt-6 flex space-x-4">
                   <button
                     type="submit"
@@ -420,9 +550,25 @@ export default function ProgrammesPage() {
                 </div>
               </form>
             </ShowcaseSection>
+            </div>
 
             {/* Programmes List */}
             <ShowcaseSection title="Programmes List">
+              <div className="flex justify-end gap-3 mb-4 print:hidden">
+                <button
+                  onClick={handleExportCSV}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <span className="mr-2">📊</span> Export CSV
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <span className="mr-2">🖨️</span> Print List
+                </button>
+              </div>
+
               {loading ? (
                 <div className="flex items-center justify-center h-32">
                   <div className="text-center">
@@ -435,10 +581,86 @@ export default function ProgrammesPage() {
                   <p className="text-gray-600">No programmes found. Add your first programme above!</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="space-y-4">
+                  {/* Search */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 print:hidden">
+                    <input
+                      type="text"
+                      placeholder="Search by programme name or code..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700"
+                    />
+                  </div>
+
+                  {/* Filters */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4 print:hidden">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <select
+                        value={filterCategory}
+                        onChange={(e) => {
+                          setFilterCategory(e.target.value);
+                          if (e.target.value !== 'arts') setFilterSubcategory('');
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+                      >
+                        <option value="">All Categories</option>
+                        <option value="arts">Arts</option>
+                        <option value="sports">Sports</option>
+                      </select>
+                    </div>
+
+                    {filterCategory === 'arts' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                        <select
+                          value={filterSubcategory}
+                          onChange={(e) => setFilterSubcategory(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+                        >
+                          <option value="">All Subcategories</option>
+                          <option value="stage">Stage</option>
+                          <option value="non-stage">Non-Stage</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                      <select
+                        value={filterSection}
+                        onChange={(e) => setFilterSection(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+                      >
+                        <option value="">All Sections</option>
+                        <option value="senior">Senior</option>
+                        <option value="junior">Junior</option>
+                        <option value="sub-junior">Sub Junior</option>
+                        <option value="general">General</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Position Type</label>
+                      <select
+                        value={filterPositionType}
+                        onChange={(e) => setFilterPositionType(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+                      >
+                        <option value="">All Types</option>
+                        <option value="individual">Individual</option>
+                        <option value="group">Group</option>
+                        <option value="general">General</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr className="border-b-2 border-gray-200">
+                        <th className="text-left py-4 px-4 font-bold text-gray-700">#</th>
                         <th className="text-left py-4 px-4 font-bold text-gray-700">Code</th>
                         <th className="text-left py-4 px-4 font-bold text-gray-700">Programme Name</th>
                         <th className="text-left py-4 px-4 font-bold text-gray-700">Category</th>
@@ -446,12 +668,22 @@ export default function ProgrammesPage() {
                         <th className="text-left py-4 px-4 font-bold text-gray-700">Position</th>
                         <th className="text-left py-4 px-4 font-bold text-gray-700">Participants</th>
                         <th className="text-left py-4 px-4 font-bold text-gray-700">Status</th>
-                        <th className="text-left py-4 px-4 font-bold text-gray-700">Actions</th>
+                        <th className="text-left py-4 px-4 font-bold text-gray-700 print:hidden">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {programmes.map((programme) => (
+                      {programmes
+                        .filter((programme) => {
+                          if (filterCategory && programme.category !== filterCategory) return false;
+                          if (filterCategory === 'arts' && filterSubcategory && programme.subcategory !== filterSubcategory) return false;
+                          if (filterSection && programme.section !== filterSection) return false;
+                          if (filterPositionType && programme.positionType !== filterPositionType) return false;
+                          if (searchQuery && !programme.name.toLowerCase().includes(searchQuery.toLowerCase()) && !programme.code.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+                          return true;
+                        })
+                        .map((programme, index) => (
                         <tr key={programme._id?.toString()} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4 text-gray-900 font-medium">{index + 1}</td>
                           <td className="py-3 px-4 text-gray-900 font-bold">{programme.code}</td>
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
@@ -492,7 +724,7 @@ export default function ProgrammesPage() {
                               {programme.status ? programme.status.charAt(0).toUpperCase() + programme.status.slice(1) : 'Unknown'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:hidden">
                             <div className="flex space-x-3">
                               <button
                                 onClick={() => handleEditProgramme(programme)}
@@ -516,6 +748,7 @@ export default function ProgrammesPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
                 </div>
               )}
             </ShowcaseSection>
